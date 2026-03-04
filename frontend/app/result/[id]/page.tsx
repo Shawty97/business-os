@@ -65,7 +65,41 @@ export default function ResultPage() {
           })}
         </div>
 
-        <div className="mt-8 text-center">
+        {/* CTA Section */}
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a
+            href={`/dashboard/${id}`}
+            className="flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-4 rounded-xl transition-colors"
+          >
+            <span>⚡</span>
+            <div className="text-left">
+              <div className="font-bold">CEO Dashboard öffnen</div>
+              <div className="text-indigo-200 text-xs">6 AI-Agents starten, Decision Queue</div>
+            </div>
+          </a>
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch(`/api/create-checkout`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ jobId: id, brandName: result.brand_name })
+                })
+                const data = await res.json()
+                if (data.checkoutUrl) window.location.href = data.checkoutUrl
+              } catch { alert('Stripe nicht verfügbar') }
+            }}
+            className="flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold px-6 py-4 rounded-xl transition-colors"
+          >
+            <span>💳</span>
+            <div className="text-left">
+              <div className="font-bold">Operator Plan — €299/Mo</div>
+              <div className="text-zinc-400 text-xs">Live Deploy + 6 Agents + 3% Revenue Share</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-6 text-center">
           <a href="/build" className="text-indigo-400 hover:text-indigo-300 text-sm">
             + Nächstes Business bauen
           </a>

@@ -318,3 +318,106 @@ def agents_status(business_id: str):
         ],
         "message": "Alle Agents bereit. POST mit task + context."
     }
+
+
+# ── DECISION QUEUE — The Unique Feature ────────────────────────────────
+import uuid as _uuid_mod
+import time as _time_mod
+
+_decisions: dict = {}  # {business_id: [{id, title, desc, options, agent, urgency, status, created_at}]}
+
+class DecisionSubmit(BaseModel):
+    title: str
+    description: str
+    options: list[str] = ["Ja, umsetzen", "Nein, überspringen", "Später entscheiden"]
+    agent: str = "analytics"
+    urgency: str = "medium"  # high | medium | low
+
+class DecisionResolve(BaseModel):
+    chosen_option: str
+    note: str = ""
+
+@app.post("/api/decisions/{business_id}")
+def submit_decision(business_id: str, req: DecisionSubmit):
+    """Agent submits a decision for the CEO to make."""
+    if business_id not in _decisions:
+        _decisions[business_id] = []
+    decision = {
+        "id": str(_uuid_mod.uuid4())[:8],
+        "title": req.title,
+        "description": req.description,
+        "options": req.options,
+        "agent": req.agent,
+        "urgency": req.urgency,
+        "status": "open",
+        "created_at": _time_mod.strftime("%Y-%m-%d %H:%M"),
+    }
+    _decisions[business_id].append(decision)
+    return {"decision_id": decision["id"], "status": "queued"}
+
+@app.get("/api/decisions/{business_id}")
+def get_decisions(business_id: str):
+    """Get all open decisions for a business."""
+    all_d = _decisions.get(business_id, [])
+    open_d = [d for d in all_d if d["status"] == "open"]
+    resolved = [d for d in all_d if d["status"] == "resolved"]
+    return {
+        "business_id": business_id,
+        "decisions": open_d,
+        "resolved_count": len(resolved),
+        "total": len(all_d),
+    }
+
+@app.patch("/api/decisions/{business_id}/{decision_id}")
+def resolve_decision(business_id: str, decision_id: str, req: DecisionResolve):
+    """CEO resolves a decision."""
+    for d in _decisions.get(business_id, []):
+        if d["id"] == decision_id:
+            d["status"] = "resolved"
+            d["chosen_option"] = req.chosen_option
+            d["resolved_at"] = _time_mod.strftime("%Y-%m-%d %H:%M")
+            return {"status": "resolved", "chosen": req.chosen_option}
+    raise HTTPException(status_code=404, detail="Decision not found")
+
+@app.get("/api/businesses/{business_id}/agents")
+def get_business_agents(business_id: str):
+    """Status of all 6 agents for a business."""
+    open_decisions = len([d for d in _decisions.get(business_id, []) if d["status"] == "open"])
+    return {
+        "business_id": business_id,
+        "agents": [
+            {"name": "Sales", "icon": "🎯", "status": "active", "endpoint": "/api/agents/sales"},
+            {"name": "Marketing", "icon": "📢", "status": "active", "endpoint": "/api/agents/marketing"},
+            {"name": "Support", "icon": "💬", "status": "active", "endpoint": "/api/agents/support"},
+            {"name": "Analytics", "icon": "📊", "status": "active", "endpoint": "/api/agents/analytics"},
+            {"name": "Finance", "icon": "💰", "status": "active", "endpoint": "/api/agents/finance"},
+            {"name": "Ops", "icon": "⚡", "status": "active", "endpoint": "/api/agents/ops"},
+        ],
+        "open_decisions": open_decisions,
+        "dashboard_url": f"/dashboard/{business_id}",
+    }
+
+
+@app.post("/api/agents/finance")
+def finance_agent(req: AgentTaskRequest):
+    """Finance Agent: Invoicing, Revenue Tracking, P&L"""
+    from openai import OpenAI
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    prompt = f"""Du bist ein präziser Finance Agent für {req.context.get('business_name', 'ein Unternehmen')}.
+Aufgabe: {req.task}
+Finanzdaten: {json.dumps(req.context, ensure_ascii=False)}
+Erstelle einen klaren Finance-Report auf Deutsch. Format: Übersicht → Details → Empfehlungen → Nächste Schritte"""
+    r = client.chat.completions.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=800)
+    return {"agent":"finance","result":r.choices[0].message.content,"business_id":req.business_id}
+
+@app.post("/api/agents/ops")
+def ops_agent(req: AgentTaskRequest):
+    """Ops Agent: Process Automation, Integration Management"""
+    from openai import OpenAI
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    prompt = f"""Du bist ein Ops & Automation Agent für {req.context.get('business_name', 'ein Unternehmen')}.
+Aufgabe: {req.task}
+Kontext: {json.dumps(req.context, ensure_ascii=False)}
+Optimiere Prozesse, schlage Automationen vor, löse Integrationsthemen. Antworte auf Deutsch."""
+    r = client.chat.completions.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=800)
+    return {"agent":"ops","result":r.choices[0].message.content,"business_id":req.business_id}

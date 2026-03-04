@@ -30,5 +30,5 @@ export async function POST(req: NextRequest) {
     metadata: { jobId, brandName },
   })
 
-  return NextResponse.json({ url: session.url })
+  return NextResponse.json({ checkoutUrl: session.url, url: session.url })
 }

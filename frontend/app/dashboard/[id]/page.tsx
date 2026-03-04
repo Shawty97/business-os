@@ -1,0 +1,242 @@
+'use client'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://187.124.4.166:8001'
+
+type Decision = {
+  id: string
+  title: string
+  description: string
+  options: string[]
+  agent: string
+  urgency: 'high' | 'medium' | 'low'
+  created_at: string
+}
+
+type Briefing = { briefing?: string; result?: string }
+
+const URGENCY_COLORS = {
+  high: 'border-red-500/40 bg-red-500/5',
+  medium: 'border-yellow-500/40 bg-yellow-500/5',
+  low: 'border-zinc-700 bg-zinc-900',
+}
+
+const URGENCY_BADGE = {
+  high: 'bg-red-500/20 text-red-400',
+  medium: 'bg-yellow-500/20 text-yellow-400',
+  low: 'bg-zinc-700 text-zinc-400',
+}
+
+export default function CEODashboard() {
+  const { id } = useParams()
+  const businessId = id as string
+
+  const [briefing, setBriefing] = useState<string>('')
+  const [briefingLoading, setBriefingLoading] = useState(false)
+  const [decisions, setDecisions] = useState<Decision[]>([])
+  const [resolvedCount, setResolvedCount] = useState(0)
+  const [lastUpdated, setLastUpdated] = useState<string>('')
+
+  // Load decisions on mount
+  useEffect(() => {
+    loadDecisions()
+  }, [businessId])
+
+  const loadDecisions = async () => {
+    try {
+      const res = await fetch(`${API}/api/decisions/${businessId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setDecisions(data.decisions || [])
+        setResolvedCount(data.resolved_count || 0)
+      }
+    } catch {}
+  }
+
+  const generateBriefing = async () => {
+    setBriefingLoading(true)
+    setBriefing('')
+    try {
+      const res = await fetch(`${API}/api/agents/analytics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_id: businessId,
+          task: 'Erstelle ein prägnantes CEO-Briefing für heute. Analysiere den aktuellen Stand und gib 3 Empfehlungen.',
+          context: {
+            business_name: 'Mein Business (Business OS)',
+            period: 'heute',
+            metrics: { revenue_today: 0, leads_active: 0, tickets_open: 0, agents_active: 4 }
+          }
+        })
+      })
+      const data: Briefing = await res.json()
+      setBriefing(data.briefing || data.result || 'Kein Briefing erhalten.')
+      setLastUpdated(new Date().toLocaleTimeString('de-DE'))
+      // Reload decisions (analytics agent may have created some)
+      await loadDecisions()
+    } catch {
+      setBriefing('Fehler beim Generieren. Backend erreichbar?')
+    } finally {
+      setBriefingLoading(false)
+    }
+  }
+
+  const resolveDecision = async (decisionId: string, option: string) => {
+    try {
+      await fetch(`${API}/api/decisions/${businessId}/${decisionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chosen_option: option })
+      })
+      await loadDecisions()
+    } catch {}
+  }
+
+  const kpis = [
+    { label: 'Umsatz heute', value: '€0', sub: 'Stripe verbinden', icon: '💰', color: 'text-green-400' },
+    { label: 'Aktive Leads', value: '0', sub: 'Sales Agent', icon: '🎯', color: 'text-indigo-400' },
+    { label: 'Offene Tickets', value: '0', sub: 'Support Agent', icon: '💬', color: 'text-blue-400' },
+    { label: 'Agents aktiv', value: '4', sub: 'Alle operational', icon: '🤖', color: 'text-emerald-400' },
+  ]
+
+  const agents = [
+    { name: 'Sales', icon: '🎯', status: 'active' },
+    { name: 'Marketing', icon: '📢', status: 'active' },
+    { name: 'Support', icon: '💬', status: 'active' },
+    { name: 'Analytics', icon: '📊', status: 'active' },
+    { name: 'Finance', icon: '💰', status: 'active' },
+    { name: 'Ops', icon: '⚡', status: 'active' },
+  ]
+
+  return (
+    <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <div className="text-zinc-500 text-sm mb-1">Business ID: {businessId}</div>
+          <h1 className="text-3xl font-black text-white">CEO Dashboard</h1>
+          {lastUpdated && <div className="text-xs text-zinc-500 mt-1">Zuletzt aktualisiert: {lastUpdated}</div>}
+        </div>
+        <button
+          onClick={generateBriefing}
+          disabled={briefingLoading}
+          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl transition-colors flex items-center gap-2"
+        >
+          {briefingLoading ? (
+            <><span className="animate-spin">⟳</span> Generiere...</>
+          ) : (
+            <>📊 CEO Briefing generieren</>
+          )}
+        </button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {kpis.map(kpi => (
+          <div key={kpi.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <div className="text-2xl mb-2">{kpi.icon}</div>
+            <div className={`text-2xl font-black ${kpi.color}`}>{kpi.value}</div>
+            <div className="text-white font-semibold text-sm mt-1">{kpi.label}</div>
+            <div className="text-zinc-500 text-xs">{kpi.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+        {/* CEO Briefing */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h2 className="font-bold text-white mb-3 flex items-center gap-2">
+            📋 <span>Tägliches Briefing</span>
+          </h2>
+          {briefing ? (
+            <div className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+              {briefing}
+            </div>
+          ) : (
+            <div className="text-zinc-500 text-sm">
+              Klicke oben auf "CEO Briefing generieren" um dein tägliches Update von deinen AI-Agents zu erhalten.
+            </div>
+          )}
+        </div>
+
+        {/* Agent Status */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h2 className="font-bold text-white mb-3 flex items-center gap-2">
+            🤖 <span>Agent Status</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {agents.map(agent => (
+              <div key={agent.name} className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2">
+                <span>{agent.icon}</span>
+                <span className="text-white text-sm font-medium">{agent.name}</span>
+                <span className="ml-auto w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Decision Queue — THE UNIQUE FEATURE */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            ⚡ <span>Decision Queue</span>
+            {decisions.length > 0 && (
+              <span className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded-full font-bold">
+                {decisions.length} offen
+              </span>
+            )}
+          </h2>
+          <span className="text-xs text-zinc-500">{resolvedCount} gelöst</span>
+        </div>
+
+        {decisions.length === 0 ? (
+          <div className="text-zinc-500 text-sm text-center py-6">
+            ✅ Keine offenen Entscheidungen — Agents laufen autonom
+            <div className="text-xs mt-1">Generiere ein CEO Briefing um neue Tasks zu sehen</div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {decisions.map(decision => (
+              <div key={decision.id} className={`border rounded-xl p-4 ${URGENCY_COLORS[decision.urgency]}`}>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <div className="font-semibold text-white text-sm">{decision.title}</div>
+                    <div className="text-zinc-400 text-xs mt-0.5">{decision.description}</div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${URGENCY_BADGE[decision.urgency]}`}>
+                      {decision.urgency}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-400">
+                      {decision.agent}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {decision.options.map(option => (
+                    <button
+                      key={option}
+                      onClick={() => resolveDecision(decision.id, option)}
+                      className="text-sm bg-zinc-800 hover:bg-indigo-600 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg transition-colors border border-zinc-700 hover:border-indigo-500"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="text-center text-zinc-600 text-xs">
+        Business OS CEO Dashboard · A-Impact · <a href="/build" className="text-indigo-500 hover:text-indigo-400">Neues Business starten</a>
+      </div>
+    </main>
+  )
+}
