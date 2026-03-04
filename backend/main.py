@@ -421,3 +421,160 @@ Kontext: {json.dumps(req.context, ensure_ascii=False)}
 Optimiere Prozesse, schlage Automationen vor, löse Integrationsthemen. Antworte auf Deutsch."""
     r = client.chat.completions.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=800)
     return {"agent":"ops","result":r.choices[0].message.content,"business_id":req.business_id}
+
+
+# ── BOS v3 — VERCEL DEPLOY API ──────────────────────────────────────────
+# Stufe 2: Nicht nur Dokumente — echte Landing Page deployen
+
+import subprocess as _subprocess
+import tempfile as _tempfile
+import shutil as _shutil
+
+class DeployRequest(BaseModel):
+    business_id: str
+    brand_name: str
+    tagline: str
+    niche: str
+    target_market: str
+    business_model: str
+    primary_color: str = "#6366f1"  # indigo default
+    founder_name: str = ""
+
+class DeployStatus(BaseModel):
+    business_id: str
+    deploy_status: str  # pending | building | live | failed
+    url: str = ""
+    error: str = ""
+
+_deploy_state: dict = {}
+
+@app.post("/api/v3/deploy")
+async def deploy_business_landing(req: DeployRequest, background_tasks: BackgroundTasks):
+    """BOS v3: Deploy a real landing page for the business to Vercel."""
+    _deploy_state[req.business_id] = {
+        "deploy_status": "pending",
+        "url": "",
+        "error": ""
+    }
+    background_tasks.add_task(_run_deploy, req)
+    return {
+        "business_id": req.business_id,
+        "deploy_status": "pending",
+        "message": f"Landing Page für '{req.brand_name}' wird deployed...",
+        "status_url": f"/api/v3/deploy/{req.business_id}/status"
+    }
+
+@app.get("/api/v3/deploy/{business_id}/status")
+def get_deploy_status(business_id: str):
+    state = _deploy_state.get(business_id, {"deploy_status": "not_found", "url": "", "error": ""})
+    return {"business_id": business_id, **state}
+
+def _run_deploy(req: DeployRequest):
+    """Background: Generate Next.js landing page and deploy to Vercel."""
+    try:
+        _deploy_state[req.business_id] = {"deploy_status": "building", "url": "", "error": ""}
+
+        # Build landing page HTML/Next.js
+        landing_html = _generate_landing_page(req)
+
+        # Create temp Next.js project
+        tmpdir = _tempfile.mkdtemp(prefix="bos-deploy-")
+        try:
+            # Write package.json
+            (Path(tmpdir) / "package.json").write_text(json.dumps({
+                "name": req.brand_name.lower().replace(" ", "-"),
+                "version": "1.0.0",
+                "private": True,
+                "scripts": {"build": "next build", "start": "next start"},
+                "dependencies": {"next": "15.3.9", "react": "^19.0.0", "react-dom": "^19.0.0"}
+            }, indent=2))
+
+            # Write pages
+            (Path(tmpdir) / "app").mkdir()
+            (Path(tmpdir) / "app" / "page.tsx").write_text(landing_html)
+            (Path(tmpdir) / "app" / "layout.tsx").write_text(
+                f'export default function Layout({{children}}: {{children: React.ReactNode}}) {{\n'
+                f'  return (<html lang="de"><body style={{{{fontFamily: "system-ui, sans-serif", margin: 0, background: "#0a0a0a", color: "white"}}}}>'
+                f'{{children}}</body></html>)\n}}'
+            )
+
+            # Deploy via Vercel API (file-based deploy)
+            vercel_token = os.environ.get("VERCEL_TOKEN", "")
+            team_id = "team_R4HVIrNbSOlLtqfrBwYqiZgO"
+            project_name = f"biz-{req.business_id[:8]}"
+
+            files = []
+            for f in Path(tmpdir).rglob("*"):
+                if f.is_file():
+                    rel = str(f.relative_to(tmpdir))
+                    content = f.read_text()
+                    files.append({"file": rel, "data": content})
+
+            import urllib.request
+            deploy_payload = json.dumps({
+                "name": project_name,
+                "files": files,
+                "projectSettings": {"framework": "nextjs"},
+                "target": "production"
+            }).encode()
+
+            req_obj = urllib.request.Request(
+                f"https://api.vercel.com/v13/deployments?teamId={team_id}",
+                data=deploy_payload,
+                headers={
+                    "Authorization": f"Bearer {vercel_token}",
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req_obj, timeout=60) as resp:
+                deploy_data = json.loads(resp.read())
+
+            deploy_url = f"https://{deploy_data.get('url', '')}"
+            _deploy_state[req.business_id] = {
+                "deploy_status": "live",
+                "url": deploy_url,
+                "vercel_id": deploy_data.get("id", ""),
+                "error": ""
+            }
+
+        finally:
+            _shutil.rmtree(tmpdir, ignore_errors=True)
+
+    except Exception as e:
+        import traceback
+        _deploy_state[req.business_id] = {
+            "deploy_status": "failed",
+            "url": "",
+            "error": str(e)
+        }
+
+def _generate_landing_page(req: DeployRequest) -> str:
+    """Generate a Next.js page.tsx for the business landing page."""
+    brand = req.brand_name.replace("'", "").replace('"', '')
+    tagline = req.tagline.replace("'", "").replace('"', '')
+    niche = req.niche.replace("'", "").replace('"', '')
+    market = req.target_market.replace("'", "").replace('"', '')
+    model = req.business_model.replace("'", "").replace('"', '')
+    color = req.primary_color
+
+    lines = [
+        "export default function Page() {",
+        "  return (",
+        '    <main style={{fontFamily:"system-ui,sans-serif",textAlign:"center",padding:"80px 24px",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>',
+        f'      <div style={{{{color:"{color}",fontWeight:600,marginBottom:"24px"}}}}>Powered by A-Impact &#xB7; AI Business OS</div>',
+        f'      <h1 style={{{{fontSize:"clamp(36px,8vw,64px)",fontWeight:900,marginBottom:"16px"}}}}>{brand}</h1>',
+        f'      <p style={{{{fontSize:"20px",color:"#888",maxWidth:"500px",lineHeight:1.6,marginBottom:"40px"}}}}>{tagline}</p>',
+        f'      <a href="#contact" style={{{{background:"{color}",color:"white",padding:"16px 40px",borderRadius:"12px",fontSize:"18px",fontWeight:700,textDecoration:"none",display:"inline-block"}}}}>Jetzt starten &#x2192;</a>',
+        '      <div style={{marginTop:"64px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"16px",maxWidth:"700px",width:"100%"}}>',
+        f'        <div style={{{{background:"#111",border:"1px solid #222",borderRadius:"12px",padding:"20px"}}}}><div>&#x1F3AF; <b>Nische</b></div><div style={{{{color:"#888",fontSize:"14px"}}}}>{niche}</div></div>',
+        f'        <div style={{{{background:"#111",border:"1px solid #222",borderRadius:"12px",padding:"20px"}}}}><div>&#x1F465; <b>Zielmarkt</b></div><div style={{{{color:"#888",fontSize:"14px"}}}}>{market}</div></div>',
+        f'        <div style={{{{background:"#111",border:"1px solid #222",borderRadius:"12px",padding:"20px"}}}}><div>&#x1F4B0; <b>Modell</b></div><div style={{{{color:"#888",fontSize:"14px"}}}}>{model}</div></div>',
+        "      </div>",
+        '      <p style={{color:"#444",fontSize:"13px",marginTop:"80px"}}>Built with A-Impact Business OS &#xB7; ALMPACT LTD</p>',
+        "    </main>",
+        "  )",
+        "}",
+    ]
+    return "\n".join(lines) + "\n"
+
