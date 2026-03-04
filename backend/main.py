@@ -789,3 +789,66 @@ p {{color: #888; line-height: 1.6; margin: 0 0 16px;}}
         return {"status": "sent", "email_id": result.get("id"), "to": req.founder_email}
     except Exception as e:
         return {"status": "failed", "error": str(e)}
+
+
+# ── MDT Integration — Auto-Marketing Launch ─────────────────────────────
+
+class MarketingLaunchRequest(BaseModel):
+    business_id: str
+    brand_name: str
+    niche: str
+    target_market: str
+    tagline: str = ""
+    founder_name: str = ""
+
+@app.post("/api/v3/marketing-launch")
+async def marketing_launch(req: MarketingLaunchRequest, background_tasks: BackgroundTasks):
+    """
+    BOS v3: After business deploy, automatically generate first week of marketing content
+    via MDT (Marketing Dream Team). Returns job_id for async tracking.
+    """
+    launch_id = f"launch-{req.business_id[:8]}"
+    _deploy_state[launch_id] = {"status": "running", "content": {}, "error": ""}
+    background_tasks.add_task(_run_marketing_launch, req, launch_id)
+    return {
+        "launch_id": launch_id,
+        "status": "running",
+        "message": "Marketing Army generiert deine erste Content-Woche...",
+        "status_url": f"/api/v3/marketing-launch/{launch_id}/status"
+    }
+
+@app.get("/api/v3/marketing-launch/{launch_id}/status")
+def get_marketing_launch_status(launch_id: str):
+    state = _deploy_state.get(launch_id, {"status": "not_found", "content": {}, "error": ""})
+    return {"launch_id": launch_id, **state}
+
+async def _run_marketing_launch(req: MarketingLaunchRequest, launch_id: str):
+    """Generate first week of content via MDT API."""
+    import urllib.request as _req
+    
+    mdt_url = "http://localhost:8002/api/v1/army/run"
+    headers = {"Content-Type": "application/json", "X-Tenant-ID": req.business_id}
+    results = {}
+    
+    tasks = [
+        ("linkedin_post", {"topic": f"{req.brand_name} — {req.tagline or req.niche}", "tone": "thought_leadership", "target_audience": req.target_market}),
+        ("write_email_sequence", {"brand": req.brand_name, "product": req.niche, "target": req.target_market, "sequence_length": 3}),
+        ("plan_content_calendar", {"brand": req.brand_name, "niche": req.niche, "platforms": ["LinkedIn", "Instagram", "Email"], "duration_weeks": 4}),
+    ]
+    
+    for task_type, params in tasks:
+        try:
+            payload = json.dumps({"task_type": task_type, "parameters": params}).encode()
+            r = _req.Request(mdt_url, data=payload, headers=headers, method="POST")
+            with _req.urlopen(r, timeout=60) as resp:
+                data = json.loads(resp.read())
+                results[task_type] = data.get("data", data.get("result", ""))
+        except Exception as e:
+            results[task_type] = f"Error: {str(e)}"
+    
+    _deploy_state[launch_id] = {
+        "status": "done",
+        "content": results,
+        "tasks_completed": len([v for v in results.values() if not str(v).startswith("Error")]),
+        "error": ""
+    }
