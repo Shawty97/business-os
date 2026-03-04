@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # 6380 extern um Konflikt mit MDT zu vermeiden
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - ./backend:/app
+      - /tmp/business-os-jobs:/tmp/business-os-jobs
+
+  worker:
+    build: ./backend
+    command: celery -A tasks worker --loglevel=info --concurrency=2
+    restart: unless-stopped
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - ./backend:/app
+      - /tmp/business-os-jobs:/tmp/business-os-jobs
