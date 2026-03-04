@@ -631,3 +631,161 @@ def _generate_landing_page(req: DeployRequest) -> str:
     ]
     return "\n".join(lines) + "\n"
 
+
+
+# ── Cal.com Integration ──────────────────────────────────────────────────
+
+class CalBookingRequest(BaseModel):
+    business_id: str
+    brand_name: str
+    founder_email: str
+    founder_name: str = ""
+    meeting_type: str = "strategy-call"  # strategy-call | onboarding | support
+
+@app.post("/api/v3/book-call")
+def book_strategy_call(req: CalBookingRequest):
+    """Returns Cal.com booking URL for strategy call with A-Impact team."""
+    # Cal.com booking links (A-Impact team)
+    cal_links = {
+        "strategy-call": "https://cal.com/a-impact/strategy",
+        "onboarding": "https://cal.com/a-impact/onboarding",
+        "support": "https://cal.com/a-impact/support",
+    }
+    base_url = cal_links.get(req.meeting_type, cal_links["strategy-call"])
+    
+    # Pre-fill Cal.com form via URL params
+    import urllib.parse
+    params = {
+        "name": req.founder_name or req.brand_name,
+        "email": req.founder_email,
+        "notes": f"Business OS Kunde: {req.brand_name} (ID: {req.business_id})",
+    }
+    booking_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    
+    return {
+        "booking_url": booking_url,
+        "meeting_type": req.meeting_type,
+        "business_id": req.business_id,
+        "embed_url": f"https://cal.com/embed?calLink={urllib.parse.quote(base_url)}",
+        "message": f"Termin buchen für {req.brand_name}"
+    }
+
+@app.get("/api/v3/cal-embed/{business_id}")
+def get_cal_embed(business_id: str, meeting_type: str = "strategy-call"):
+    """Returns Cal.com embed script for inline booking."""
+    cal_links = {
+        "strategy-call": "a-impact/strategy",
+        "onboarding": "a-impact/onboarding",
+    }
+    cal_link = cal_links.get(meeting_type, "a-impact/strategy")
+    
+    embed_script = f"""<script type="text/javascript">
+(function (C, A, L) {{ 
+  let p = function (a, ar) {{ a.q.push(ar); }};
+  let d = C.document;
+  C.Cal = C.Cal || function () {{ let cal = C.Cal; let ar = arguments; if (!cal.loaded) {{ cal.ns = {{}}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; }} if (ar[0] === L) {{ const api = function () {{ p(api, arguments); }}; const namespace = ar[1]; api.q = api.q || []; typeof namespace === "string" ? (cal.ns[namespace] = api) && p(api, ar) : p(cal, ar); return; }} p(cal, ar); }};
+}})(window, "https://app.cal.com/embed/embed.js", "init");
+Cal("init", "a-impact", {{origin:"https://cal.com"}});
+Cal.ns["a-impact"]("inline", {{
+  elementOrSelector:"#cal-booking-{business_id}",
+  config: {{"layout":"month_view"}},
+  calLink: "{cal_link}",
+}});
+</script>
+<div id="cal-booking-{business_id}" style="width:100%;height:500px;"></div>"""
+    
+    return {
+        "business_id": business_id,
+        "embed_html": embed_script,
+        "cal_link": cal_link,
+    }
+
+
+# ── RESEND Email Integration ────────────────────────────────────────────
+
+class WelcomeEmailRequest(BaseModel):
+    business_id: str
+    brand_name: str
+    founder_email: str
+    founder_name: str = ""
+    landing_url: str = ""
+    tagline: str = ""
+
+@app.post("/api/v3/send-welcome")
+def send_welcome_email(req: WelcomeEmailRequest):
+    """Send welcome email sequence via RESEND after business deploy."""
+    import urllib.request
+    
+    resend_key = os.environ.get("RESEND_API_KEY", "")
+    if not resend_key:
+        return {"status": "skipped", "reason": "RESEND_API_KEY not configured"}
+    
+    html_body = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+body {{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 0;}}
+.container {{max-width: 600px; margin: 0 auto; padding: 40px 24px;}}
+.badge {{display: inline-block; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; font-size: 13px; padding: 6px 16px; border-radius: 20px; margin-bottom: 24px;}}
+h1 {{font-size: 28px; font-weight: 900; margin: 0 0 12px;}}
+p {{color: #888; line-height: 1.6; margin: 0 0 16px;}}
+.cta {{display: inline-block; background: #4f46e5; color: white; font-weight: 700; padding: 14px 28px; border-radius: 10px; text-decoration: none; margin: 8px 0;}}
+.box {{background: #111; border: 1px solid #222; border-radius: 12px; padding: 20px; margin: 20px 0;}}
+.footer {{color: #444; font-size: 12px; margin-top: 40px;}}
+</style></head>
+<body>
+<div class="container">
+  <div class="badge">⚡ A-Impact Business OS</div>
+  <h1>Dein Business ist ready, {req.founder_name or req.brand_name}!</h1>
+  <p>Wir haben <strong>{req.brand_name}</strong> für dich aufgebaut. Hier ist alles was du jetzt hast:</p>
+  
+  <div class="box">
+    <p style="color:#fff; font-weight:600; margin-bottom:8px;">✅ Was deployed wurde:</p>
+    <p>🎨 Vollständiges Brand-Paket<br>
+    📢 90-Tage Marketing-Plan<br>
+    💰 Sales Deck (ready zum Versenden)<br>
+    🤖 AI-Agents konfiguriert (Sales, Marketing, Support, Analytics)<br>
+    {f"🌐 Landing Page live: {req.landing_url}" if req.landing_url else ""}</p>
+  </div>
+  
+  {f'<a href="{req.landing_url}" class="cta">🌐 Landing Page ansehen →</a><br>' if req.landing_url else ''}
+  <a href="https://business-os-git-main-ai-mpact.vercel.app/dashboard/{req.business_id}" class="cta" style="background:#1a1a1a; border: 1px solid #333;">⚡ CEO Dashboard öffnen</a>
+  
+  <p style="margin-top:24px;">Deine nächsten Schritte:</p>
+  <p>1. <strong>CEO Briefing generieren</strong> — sehen was deine Agents empfehlen<br>
+  2. <strong>Decision Queue</strong> — erste Entscheidungen treffen<br>
+  3. <strong>Sales Deck teilen</strong> — erste Kunden kontaktieren</p>
+  
+  <p>Fragen? Antworte einfach auf diese Email.<br>
+  Oder buch ein Strategy Call: <a href="https://cal.com/a-impact/strategy" style="color:#818cf8;">cal.com/a-impact/strategy</a></p>
+  
+  <div class="footer">
+    A-Impact · ALMPACT LTD · Paphos, Cyprus<br>
+    Business OS by A-Impact | <a href="#" style="color:#444;">Unsubscribe</a>
+  </div>
+</div>
+</body>
+</html>"""
+
+    email_payload = json.dumps({
+        "from": "A-Impact Business OS <onboarding@a-impact.io>",
+        "to": [req.founder_email],
+        "subject": f"🚀 {req.brand_name} ist live — dein Business wartet auf dich",
+        "html": html_body,
+        "reply_to": "robert@a-impact.io",
+    }).encode()
+
+    try:
+        req_obj = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=email_payload,
+            headers={
+                "Authorization": f"Bearer {resend_key}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req_obj, timeout=10) as resp:
+            result = json.loads(resp.read())
+        return {"status": "sent", "email_id": result.get("id"), "to": req.founder_email}
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
