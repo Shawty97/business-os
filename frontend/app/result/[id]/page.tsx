@@ -77,26 +77,16 @@ export default function ResultPage() {
               <div className="text-indigo-200 text-xs">6 AI-Agents starten, Decision Queue</div>
             </div>
           </a>
-          <button
-            onClick={async () => {
-              try {
-                const res = await fetch(`/api/create-checkout`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ jobId: id, brandName: result.brand_name })
-                })
-                const data = await res.json()
-                if (data.checkoutUrl) window.location.href = data.checkoutUrl
-              } catch { alert('Stripe nicht verfügbar') }
-            }}
-            className="flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold px-6 py-4 rounded-xl transition-colors"
+          <a
+            href={`/deploy/${id}`}
+            className="flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-indigo-500/30 text-white font-bold px-6 py-4 rounded-xl transition-colors"
           >
-            <span>💳</span>
+            <span>🚀</span>
             <div className="text-left">
-              <div className="font-bold">Operator Plan — €299/Mo</div>
-              <div className="text-zinc-400 text-xs">Live Deploy + 6 Agents + 3% Revenue Share</div>
+              <div className="font-bold">Operator Plan — Landing Page deployen</div>
+              <div className="text-indigo-400 text-xs">Live URL in ~30 Sekunden · 6 Agents · CEO Dashboard</div>
             </div>
-          </button>
+          </a>
         </div>
 
         <div className="mt-6 text-center">
