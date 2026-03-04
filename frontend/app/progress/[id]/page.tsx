@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://187.124.4.166:8001'
 
 const STEPS = [
   'Generiere Brand...',
@@ -41,7 +41,7 @@ export default function ProgressPage() {
       <div className="w-full max-w-lg text-center">
         <div className="text-6xl mb-6 animate-pulse">🏗️</div>
         <h2 className="text-3xl font-bold mb-2">Dein Business wird gebaut</h2>
-        <p className="text-zinc-400 mb-8">Das dauert ca. 15-20 Minuten. Du kannst diese Seite offen lassen.</p>
+        <p className="text-zinc-400 mb-8">Das dauert ca. 90 Sekunden. AI generiert dein komplettes Business-Paket.</p>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
           <div className="flex justify-between text-sm text-zinc-400 mb-2">
