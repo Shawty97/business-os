@@ -298,11 +298,64 @@ Kurz und direkt. Kein Bullshit."""
         max_tokens=1000
     )
 
+    briefing_text = response.choices[0].message.content
+
+    # Auto-generate decisions for the Decision Queue
+    decision_prompt = f"""Basierend auf diesem CEO-Briefing, erstelle 2 konkrete Entscheidungen die der CEO treffen muss.
+
+Briefing:
+{briefing_text}
+
+Antworte NUR als JSON-Array mit genau 2 Objekten:
+[
+  {{"title": "kurzer Titel", "description": "1 Satz Erklärung", "options": ["Option A", "Option B", "Option C"], "urgency": "high|medium|low"}},
+  {{"title": "...", "description": "...", "options": ["...", "...", "..."], "urgency": "..."}}
+]"""
+
+    dec_response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": decision_prompt}],
+        max_tokens=600,
+    )
+
+    try:
+        dec_raw = dec_response.choices[0].message.content
+        # Extract JSON array from response
+        import re as _re
+        arr_match = _re.search(r'\[.*\]', dec_raw, _re.DOTALL)
+        if arr_match:
+            decisions_list = json.loads(arr_match.group())
+        else:
+            decisions_list = json.loads(dec_raw) if dec_raw.strip().startswith('[') else []
+        if isinstance(decisions_list, dict):
+            decisions_list = decisions_list.get("decisions", decisions_list.get("items", []))
+
+        if req.business_id not in _decisions:
+            _decisions[req.business_id] = []
+
+        for d in decisions_list[:2]:
+            import uuid as _u
+            import time as _t
+            _decisions[req.business_id].append({
+                "id": str(_u.uuid4())[:8],
+                "title": d.get("title", "Entscheidung erforderlich"),
+                "description": d.get("description", ""),
+                "options": d.get("options", ["Ja", "Nein", "Später"]),
+                "agent": "analytics",
+                "urgency": d.get("urgency", "medium"),
+                "status": "open",
+                "created_at": _t.strftime("%Y-%m-%d %H:%M"),
+            })
+        decisions_created = len(decisions_list[:2])
+    except Exception:
+        decisions_created = 0
+
     return {
         "agent": "analytics",
-        "briefing": response.choices[0].message.content,
+        "briefing": briefing_text,
         "period": req.context.get("period", "heute"),
-        "business_id": req.business_id
+        "business_id": req.business_id,
+        "decisions_created": decisions_created,
     }
 
 @app.get("/api/agents/status/{business_id}")
