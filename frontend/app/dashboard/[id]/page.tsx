@@ -37,10 +37,16 @@ export default function CEODashboard() {
   const [decisions, setDecisions] = useState<Decision[]>([])
   const [resolvedCount, setResolvedCount] = useState(0)
   const [lastUpdated, setLastUpdated] = useState<string>('')
+  const [brandName, setBrandName] = useState<string>('')
 
-  // Load decisions on mount
+  // Load decisions + brand on mount
   useEffect(() => {
     loadDecisions()
+    // Try to get brand name from result
+    fetch(`${API}/api/jobs/${businessId}/result`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d?.brand_name && setBrandName(d.brand_name))
+      .catch(() => {})
   }, [businessId])
 
   const loadDecisions = async () => {
@@ -116,9 +122,9 @@ export default function CEODashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-zinc-500 text-sm mb-1">Business ID: {businessId}</div>
-          <h1 className="text-3xl font-black text-white">CEO Dashboard</h1>
-          {lastUpdated && <div className="text-xs text-zinc-500 mt-1">Zuletzt aktualisiert: {lastUpdated}</div>}
+          <div className="text-zinc-500 text-sm mb-1">⚡ CEO Dashboard {brandName ? `— ${brandName}` : ''}</div>
+          <h1 className="text-3xl font-black text-white">{brandName || 'Mein Business'}</h1>
+          {lastUpdated && <div className="text-xs text-zinc-500 mt-1">Briefing: {lastUpdated}</div>}
         </div>
         <button
           onClick={generateBriefing}
@@ -234,8 +240,45 @@ export default function CEODashboard() {
         )}
       </div>
 
+      {/* Quick Actions */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
+        <h2 className="font-bold text-white mb-4">⚡ Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <a
+            href={`/deploy/${businessId}`}
+            className="flex flex-col items-center gap-2 bg-zinc-800 hover:bg-indigo-900/30 hover:border-indigo-500/30 border border-zinc-700 rounded-xl p-4 transition-all text-center"
+          >
+            <span className="text-2xl">🚀</span>
+            <span className="text-xs font-semibold text-white">Landing Page deployen</span>
+          </a>
+          <a
+            href={`/result/${businessId}`}
+            className="flex flex-col items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl p-4 transition-all text-center"
+          >
+            <span className="text-2xl">📄</span>
+            <span className="text-xs font-semibold text-white">Dokumente ansehen</span>
+          </a>
+          <a
+            href="https://cal.com/a-impact/strategy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl p-4 transition-all text-center"
+          >
+            <span className="text-2xl">📅</span>
+            <span className="text-xs font-semibold text-white">Strategy Call buchen</span>
+          </a>
+          <a
+            href="/build"
+            className="flex flex-col items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl p-4 transition-all text-center"
+          >
+            <span className="text-2xl">➕</span>
+            <span className="text-xs font-semibold text-white">Neues Business starten</span>
+          </a>
+        </div>
+      </div>
+
       <div className="text-center text-zinc-600 text-xs">
-        Business OS CEO Dashboard · A-Impact · <a href="/build" className="text-indigo-500 hover:text-indigo-400">Neues Business starten</a>
+        Business OS CEO Dashboard · A-Impact
       </div>
     </main>
   )
