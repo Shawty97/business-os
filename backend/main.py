@@ -136,7 +136,14 @@ def health():
 @app.post("/api/jobs")
 def create_job(req: BuildRequest):
     job_id = str(uuid.uuid4())
-    set_state(job_id, {"status": "pending", "progress": 0, "current_step": "Warte auf Start..."})
+    set_state(job_id, {
+        "status": "pending", 
+        "progress": 0, 
+        "current_step": "Warte auf Start...",
+        "niche": req.niche,
+        "founder_name": req.founder_name,
+        "description": req.description[:100],
+    })
 
     # Run in background thread (no Redis/Celery needed)
     t = threading.Thread(target=run_build_job, args=(job_id, req), daemon=True)
@@ -882,3 +889,69 @@ def _send_welcome_auto(business_id: str, brand_name: str, founder_email: str,
         tagline=tagline,
     )
     send_welcome_email(req)
+
+
+# ── Admin Endpoints ─────────────────────────────────────────────────────
+
+@app.get("/api/admin/jobs")
+def admin_list_jobs():
+    """Admin: list all created businesses with metadata."""
+    jobs = []
+    for f in sorted(JOB_STATE_DIR.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+        try:
+            data = json.loads(f.read_text())
+            job_id = f.stem
+            result_data = data.get("result", {})
+            jobs.append({
+                "id": job_id,
+                "status": data.get("status", "unknown"),
+                "progress": data.get("progress", 0),
+                "brand_name": result_data.get("brand_name", ""),
+                "niche": data.get("niche", result_data.get("niche", "")),
+                "founder_name": data.get("founder_name", ""),
+                "created": f.stat().st_mtime,
+            })
+        except Exception:
+            pass
+    
+    done = sum(1 for j in jobs if j["status"] == "done")
+    running = sum(1 for j in jobs if j["status"] == "running")
+    
+    return {
+        "jobs": jobs[:50],  # Max 50 in admin list
+        "stats": {
+            "total": len(jobs),
+            "done": done,
+            "running": running,
+        }
+    }
+
+@app.get("/api/admin/status")
+def admin_system_status():
+    """Admin: full system status."""
+    return {
+        "services": {
+            "bos_api": "ok",
+            "mdt_api": _check_service("http://localhost:8002/health"),
+        },
+        "jobs_total": len(list(JOB_STATE_DIR.glob("*.json"))),
+        "deploy_state_count": len(_deploy_state),
+        "uptime": _get_uptime(),
+    }
+
+def _check_service(url: str) -> str:
+    try:
+        import urllib.request
+        with urllib.request.urlopen(url, timeout=3) as r:
+            return "ok" if r.status == 200 else "degraded"
+    except:
+        return "down"
+
+def _get_uptime() -> str:
+    try:
+        with open("/proc/uptime") as f:
+            secs = float(f.read().split()[0])
+        h, m = int(secs // 3600), int((secs % 3600) // 60)
+        return f"{h}h {m}m"
+    except:
+        return "unknown"
