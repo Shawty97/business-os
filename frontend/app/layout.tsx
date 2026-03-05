@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 export const metadata: Metadata = {
   title: 'Business OS — A-Impact',
@@ -17,7 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="de">
       <body className="bg-black text-white min-h-screen antialiased">
         <Header />
-        {children}
+        <div className="min-h-[calc(100vh-56px)]">
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   )
