@@ -33,6 +33,16 @@ export default function ResultPage() {
   const [result, setResult] = useState<Result | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const copyShareLink = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : ''
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
 
   useEffect(() => {
     fetch(`${API}/api/jobs/${id}/result`)
@@ -54,7 +64,13 @@ export default function ResultPage() {
         <div className="text-center mb-12">
           <div className="text-5xl mb-4">🎉</div>
           <h1 className="text-4xl font-black mb-2">{result.brand_name}</h1>
-          <p className="text-xl text-zinc-400 italic mb-8">"{result.tagline}"</p>
+          <p className="text-xl text-zinc-400 italic mb-4">"{result.tagline}"</p>
+          <button
+            onClick={copyShareLink}
+            className="mb-8 text-sm text-zinc-500 hover:text-white border border-zinc-800 hover:border-zinc-600 px-4 py-2 rounded-lg transition-colors"
+          >
+            {copied ? '✓ Link kopiert!' : '🔗 Link teilen'}
+          </button>
 
           <a
             href={`${API}${result.zip_url}`}
