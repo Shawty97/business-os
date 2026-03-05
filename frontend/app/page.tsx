@@ -125,6 +125,46 @@ export default function Home() {
           </div>
         </div>
 
+        {/* BOS v3 — The 100x Upgrade */}
+        <div className="mb-20">
+          <div className="bg-gradient-to-b from-indigo-500/5 to-transparent border border-indigo-500/20 rounded-2xl p-8 md:p-12">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-indigo-500/10 text-indigo-400 text-xs font-bold px-4 py-1.5 rounded-full mb-4 uppercase tracking-wider">
+                🧠 Neu: BOS v3 — Firma-Operator
+              </div>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
+                Nicht nur generieren.<br />
+                <span className="text-indigo-400">Dein Business läuft danach weiter.</span>
+              </h2>
+              <p className="text-zinc-400 max-w-xl mx-auto">
+                Nach dem Build starten 6 AI-Agents die dein Business autonom betreiben.
+                Jeden Tag. Marketing, Sales, Support — ohne dich.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              {[
+                { icon: '📢', title: 'Marketing Agent', desc: 'Generiert täglich LinkedIn Posts, plant Content-Kalender, erstellt Email-Kampagnen — alles mit GPT-4o.' },
+                { icon: '🎯', title: 'Sales Agent', desc: 'Identifiziert Prospects, schreibt personalisierte Outreach-Nachrichten, qualifiziert Leads nach BANT.' },
+                { icon: '📊', title: 'Analytics Agent', desc: 'Tägliches CEO Briefing mit Highlights, Risiken und Empfehlungen. Basiert auf echten Business-Daten.' },
+                { icon: '⚡', title: 'Ops Agent', desc: 'Überwacht Services, schlägt Automatisierungen vor, hält alles am Laufen.' },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-xl">{icon}</span>
+                    <span className="font-bold text-white">{title}</span>
+                  </div>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-8">
+              <Link href="/demo" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-3 rounded-xl inline-block transition-colors">
+                Agent Runner testen →
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Pricing */}
         <div id="pricing" className="mb-20">
           <h2 className="text-3xl font-black mb-2 text-white">Pricing</h2>
