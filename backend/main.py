@@ -651,11 +651,14 @@ def _run_deploy(req: DeployRequest):
             _shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as e:
-        import traceback
+        error_msg = str(e)
+        # Friendly message for Vercel free tier limit
+        if "402" in error_msg or "payment_required" in error_msg.lower() or "api-deployments-free-per-day" in error_msg:
+            error_msg = "Vercel Deploy-Limit erreicht (100/Tag). Bitte in ~10h erneut versuchen."
         _deploy_state[req.business_id] = {
             "deploy_status": "failed",
             "url": "",
-            "error": str(e)
+            "error": error_msg
         }
 
 def _generate_landing_page(req: DeployRequest) -> str:
