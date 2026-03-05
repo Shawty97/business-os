@@ -1141,8 +1141,9 @@ def get_job_preview(job_id: str):
 # ── File Viewer ─────────────────────────────────────────────────────────
 
 VIEWABLE_FILES = {
-    "MARKETING_PLAN.md": "Marketing Plan",
+    "PITCH.md": "Pitch (1-Pager)",
     "QUICK_START.md": "Quick Start Guide",
+    "MARKETING_PLAN.md": "Marketing Plan",
     "REVENUE_MODEL.md": "Revenue Model",
     "SOUL.md": "AI Operator Persona",
 }

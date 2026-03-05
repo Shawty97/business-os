@@ -492,6 +492,52 @@ def create_env_example(tech: dict, agents: list) -> str:
     return "\n".join(lines)
 
 
+def generate_pitch_md(brand: dict, sales: dict, description: str, qualifications: dict) -> str:
+    """1-pager pitch document — for email or quick sharing."""
+    name = brand.get('empfehlung', 'Business')
+    tagline = brand.get('empfohlene_tagline', '')
+    uvp = brand.get('unique_value_proposition', '')
+    positioning = brand.get('positioning', '')
+    pitch = sales.get('sales_pitch_elevator', '')
+    pricing = sales.get('pricing_modelle', [])
+    deal_size = sales.get('deal_size_eur', 0)
+    zielgruppe = qualifications.get('zielgruppe', '')
+    
+    pricing_lines = ""
+    for p in pricing:
+        pricing_lines += f"- **{p.get('name','')}:** {p.get('preis','')} — {', '.join(p.get('features',[])[:3])}\n"
+    
+    return f"""# {name} — Pitch
+
+**"{tagline}"**
+
+---
+
+## TL;DR
+{pitch}
+
+## Problem
+{uvp}
+
+## Positionierung
+{positioning}
+
+## Zielgruppe
+{zielgruppe}
+
+## Pricing
+{pricing_lines}
+**Ø Deal Size:** {deal_size:,}€ | **Sales Cycle:** {sales.get('sales_cycle_tage',14)} Tage
+
+## Nächster Schritt
+📅 Strategiegespräch (20 Min): https://cal.com/a-impact/strategy
+📧 apex@a-impact.io | 🌐 https://a-impact.io
+
+---
+*Erstellt mit A-Impact Business OS · {datetime.now().strftime('%d.%m.%Y')}*
+"""
+
+
 def build_business(description: str, qualifications: dict) -> Path:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     brand_slug = description[:30].lower().replace(" ", "-").replace(",", "")
@@ -516,6 +562,7 @@ def build_business(description: str, qualifications: dict) -> Path:
     quickstart = generate_quickstart(brand, tech, agents, sales)
     sales_deck = create_sales_deck_html(brand, sales, description)
     env_example = create_env_example(tech, agents)
+    pitch_md = generate_pitch_md(brand, sales, description, qualifications)
     
     # Write all files
     print("  💾 Schreibe Dateien...")
@@ -529,6 +576,7 @@ def build_business(description: str, qualifications: dict) -> Path:
     (output_path / "QUICK_START.md").write_text(quickstart)
     (output_path / "SALES_DECK.html").write_text(sales_deck)
     (output_path / ".env.example").write_text(env_example)
+    (output_path / "PITCH.md").write_text(pitch_md)
     
     # Write business summary
     summary = {
