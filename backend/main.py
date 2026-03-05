@@ -1027,3 +1027,59 @@ def test_notification(msg: str = "Apex ist online ⚡"):
         return {"status": "sent"}
     except Exception as e:
         return {"status": "failed", "error": str(e)}
+
+
+# ── Preview API ─────────────────────────────────────────────────────────
+
+@app.get("/api/jobs/{job_id}/preview")
+def get_job_preview(job_id: str):
+    """Returns preview data for the result page — brand, tagline, key bullets."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Job not found or not done")
+
+    output_dir = Path(state.get("output_dir", ""))
+    preview = {
+        "brand_name": state.get("brand_name", ""),
+        "tagline": state.get("tagline", ""),
+        "brand": {},
+        "quick_start_bullets": [],
+        "revenue_headline": "",
+    }
+
+    # Parse BRAND.json
+    brand_file = output_dir / "BRAND.json"
+    if brand_file.exists():
+        try:
+            brand = json.loads(brand_file.read_text())
+            preview["brand"] = {
+                "colors": brand.get("colors", brand.get("brand_colors", {})),
+                "positioning": brand.get("positioning", brand.get("unique_value_proposition", ""))[:200],
+                "tone": brand.get("tone_of_voice", brand.get("tone", "")),
+                "target": brand.get("target_market", ""),
+            }
+        except Exception:
+            pass
+
+    # Parse REVENUE_MODEL.md (first 3 lines after header)
+    revenue_file = output_dir / "REVENUE_MODEL.md"
+    if revenue_file.exists():
+        try:
+            content = revenue_file.read_text()
+            lines = [l.strip() for l in content.split('\n') if l.strip() and not l.startswith('#')]
+            preview["revenue_headline"] = lines[0][:150] if lines else ""
+        except Exception:
+            pass
+
+    # Parse QUICK_START.md for action bullets
+    qs_file = output_dir / "QUICK_START.md"
+    if qs_file.exists():
+        try:
+            content = qs_file.read_text()
+            bullets = [l.strip('- •').strip() for l in content.split('\n')
+                      if l.strip().startswith(('- ', '• ', '1.', '2.', '3.'))]
+            preview["quick_start_bullets"] = bullets[:5]
+        except Exception:
+            pass
+
+    return preview

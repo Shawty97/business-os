@@ -5,6 +5,12 @@ import { useParams } from 'next/navigation'
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://187.124.4.166:8001'
 
 type Result = { brand_name: string; tagline: string; files: string[]; zip_url: string }
+type Preview = {
+  brand_name: string; tagline: string
+  brand: { colors?: Record<string,string>; positioning?: string; tone?: string }
+  quick_start_bullets: string[]
+  revenue_headline: string
+}
 
 const FILE_META: Record<string, { icon: string; label: string; desc: string }> = {
   'BRAND.json':        { icon: '🎨', label: 'Brand',          desc: 'Name, Farben, UVP, Positioning' },
@@ -21,6 +27,7 @@ const FILE_META: Record<string, { icon: string; label: string; desc: string }> =
 export default function ResultPage() {
   const { id } = useParams()
   const [result, setResult] = useState<Result | null>(null)
+  const [preview, setPreview] = useState<Preview | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -28,6 +35,10 @@ export default function ResultPage() {
       .then(r => r.json())
       .then(setResult)
       .catch(() => setError('Ergebnis nicht gefunden.'))
+    fetch(`${API}/api/jobs/${id}/preview`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setPreview(d))
+      .catch(() => {})
   }, [id])
 
   if (error) return <main className="min-h-screen flex items-center justify-center"><p className="text-red-400">{error}</p></main>
@@ -48,6 +59,40 @@ export default function ResultPage() {
             📦 Business-Paket herunterladen (ZIP)
           </a>
         </div>
+
+        {/* Preview Cards */}
+        {preview && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            {preview.brand.positioning && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 col-span-full">
+                <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">🎨 Positioning</div>
+                <p className="text-zinc-300 text-sm leading-relaxed">{preview.brand.positioning}</p>
+                {preview.brand.tone && (
+                  <div className="mt-2 text-xs text-zinc-500">Ton: {preview.brand.tone}</div>
+                )}
+              </div>
+            )}
+            {preview.quick_start_bullets.length > 0 && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-3">🚀 Quick Start — Erste 7 Tage</div>
+                <ul className="space-y-1.5">
+                  {preview.quick_start_bullets.map((b, i) => (
+                    <li key={i} className="text-zinc-300 text-sm flex gap-2">
+                      <span className="text-indigo-400 shrink-0">{i + 1}.</span>
+                      <span>{b.replace(/^\[[ x]\] /, '')}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {preview.revenue_headline && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="text-xs font-semibold text-yellow-400 uppercase tracking-wide mb-2">💰 Revenue Modell</div>
+                <p className="text-zinc-300 text-sm leading-relaxed">{preview.revenue_headline}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <h2 className="text-xl font-bold mb-4 text-zinc-300">Was enthalten ist:</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
