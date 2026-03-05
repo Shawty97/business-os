@@ -973,8 +973,9 @@ def admin_list_jobs():
                 "id": job_id,
                 "status": data.get("status", "unknown"),
                 "progress": data.get("progress", 0),
-                "brand_name": result_data.get("brand_name", ""),
+                "brand_name": data.get("brand_name", result_data.get("brand_name", "")),
                 "niche": data.get("niche", result_data.get("niche", "")),
+                "tagline": data.get("tagline", result_data.get("tagline", "")),
                 "founder_name": data.get("founder_name", ""),
                 "created": f.stat().st_mtime,
             })
