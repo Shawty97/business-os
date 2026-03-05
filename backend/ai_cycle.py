@@ -26,16 +26,45 @@ def call_gpt(system: str, user: str, max_tokens: int = 800) -> str:
 
 
 def run_ai_marketing(brand: dict, business_desc: str) -> dict:
-    """Marketing Agent: Generate today's social media content."""
+    """Marketing Agent: Generate today's content. Tries MDT first, falls back to GPT-4o."""
     name = brand.get("empfehlung", "Business")
     tagline = brand.get("empfohlene_tagline", "")
     uvp = brand.get("unique_value_proposition", "")
     
+    # Try MDT first for LinkedIn post
+    mdt_result = None
+    try:
+        resp = requests.post(
+            f"{MDT_URL}/tasks/execute",
+            headers={"Content-Type": "application/json", "X-Tenant-ID": "a-impact"},
+            json={
+                "task_type": "write_linkedin_post",
+                "context": {
+                    "company_name": name,
+                    "industry": uvp[:100],
+                    "target_audience": "DACH Mittelstand",
+                    "tone": "Professional, direkt, deutsch",
+                    "product": business_desc[:200],
+                }
+            },
+            timeout=30
+        )
+        if resp.status_code == 200:
+            mdt_data = resp.json()
+            mdt_result = mdt_data.get("result") or mdt_data.get("content")
+    except Exception:
+        pass
+    
+    # Always generate full content with GPT-4o
     result = call_gpt(
         f"Du bist der Marketing Agent von {name}. Dein Job: Täglicher Content der Aufmerksamkeit generiert.",
         f"Business: {name} — {tagline}\nUVP: {uvp}\nBeschreibung: {business_desc[:200]}\n\nErstelle für HEUTE:\n1. Einen LinkedIn Post (max 200 Wörter, Hook + Value + CTA)\n2. Einen Tweet/X Post (max 280 Zeichen)\n3. Eine Story-Idee (Instagram/TikTok, 1 Satz)\n\nDatum: {datetime.now().strftime('%d.%m.%Y')}",
     )
-    return {"agent": "marketing", "action": "daily_content", "result": result}
+    
+    if mdt_result:
+        result = f"[MDT LinkedIn Post]\n{mdt_result}\n\n---\n\n[GPT-4o Zusatz-Content]\n{result}"
+    
+    return {"agent": "marketing", "action": "daily_content_mdt", "result": result}
 
 
 def run_ai_sales(brand: dict, business_desc: str) -> dict:
