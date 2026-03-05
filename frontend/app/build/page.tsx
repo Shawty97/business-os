@@ -14,6 +14,7 @@ export default function BuildPage() {
     target_market: '',
     business_model: 'Monthly Retainer',
     founder_name: '',
+    founder_email: '',
   })
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -62,14 +63,26 @@ export default function BuildPage() {
               onChange={e => update('description', e.target.value)}
             />
 
-            <div className="mt-4">
-              <label className="text-sm text-zinc-400 mb-1 block">Dein Name (optional)</label>
-              <input
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
-                placeholder="z.B. Robert"
-                value={form.founder_name}
-                onChange={e => update('founder_name', e.target.value)}
-              />
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">Dein Name (optional)</label>
+                <input
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                  placeholder="z.B. Robert"
+                  value={form.founder_name}
+                  onChange={e => update('founder_name', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-zinc-400 mb-1 block">E-Mail (für Welcome-Mail)</label>
+                <input
+                  type="email"
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                  placeholder="deine@email.de"
+                  value={form.founder_email}
+                  onChange={e => update('founder_email', e.target.value)}
+                />
+              </div>
             </div>
 
             <button
