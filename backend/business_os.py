@@ -317,17 +317,43 @@ def create_sales_deck_html(brand: dict, sales: dict, description: str) -> str:
     tagline = brand.get('empfohlene_tagline', '')
     uvp = brand.get('unique_value_proposition', '')
     color = brand.get('farben', {}).get('primaer', '#6366f1')
+    accent = brand.get('farben', {}).get('akzent', '#a855f7')
     pitch = sales.get('sales_pitch_elevator', '')
     pricing = sales.get('pricing_modelle', [])
+    positioning = brand.get('positioning', '')
+    personas = sales.get('zielgruppe_personas', [])
+    einwaende = sales.get('einwaende', [])
+    cycle = sales.get('sales_cycle_tage', 14)
+    deal_size = sales.get('deal_size_eur', 0)
+    ltv = sales.get('ltv_eur', 0)
     
     pricing_html = ""
-    for p in pricing:
+    for i, p in enumerate(pricing):
         features = "".join(f"<li>{f}</li>" for f in p.get('features', []))
+        featured = ' featured' if i == 1 else ''
         pricing_html += f"""
-        <div class="pricing-card">
-            <h3>{p.get('name', '')}</h3>
+        <div class="pricing-card{featured}">
+            <div class="p-label">{p.get('name', '')}</div>
             <div class="price">{p.get('preis', '')}</div>
             <ul>{features}</ul>
+        </div>"""
+    
+    objection_html = ""
+    for e in einwaende[:3]:
+        objection_html += f"""
+        <div class="objection-card">
+            <div class="obj-q">❓ {e.get('einwand','')}</div>
+            <div class="obj-a">→ {e.get('antwort','')}</div>
+        </div>"""
+    
+    persona_html = ""
+    for p in personas[:2]:
+        pains = "".join(f"<span>{pain}</span>" for pain in p.get('pain_points',[])[:3])
+        persona_html += f"""
+        <div class="persona-card">
+            <div class="persona-name">{p.get('name','')}</div>
+            <div class="persona-role">{p.get('rolle','')}</div>
+            <div class="persona-pains">{pains}</div>
         </div>"""
     
     return f"""<!DOCTYPE html>
@@ -337,63 +363,106 @@ def create_sales_deck_html(brand: dict, sales: dict, description: str) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{name} — Sales Deck</title>
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: #fff; }}
-  .slide {{ min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 60px 40px; text-align: center; border-bottom: 1px solid #222; }}
-  .slide:nth-child(even) {{ background: #161616; }}
-  h1 {{ font-size: 3.5rem; font-weight: 800; color: {color}; margin-bottom: 1rem; }}
-  h2 {{ font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; }}
-  p {{ font-size: 1.2rem; color: #aaa; max-width: 700px; line-height: 1.7; }}
-  .tagline {{ font-size: 1.5rem; color: #fff; margin-bottom: 2rem; }}
-  .badge {{ background: {color}22; border: 1px solid {color}; color: {color}; padding: 6px 16px; border-radius: 99px; font-size: 0.85rem; display: inline-block; margin-bottom: 1rem; }}
-  .pricing-grid {{ display: flex; gap: 24px; margin-top: 2rem; flex-wrap: wrap; justify-content: center; }}
-  .pricing-card {{ background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 32px; min-width: 220px; text-align: left; }}
-  .pricing-card h3 {{ color: {color}; margin-bottom: 0.5rem; }}
-  .pricing-card .price {{ font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }}
-  .pricing-card ul {{ list-style: none; }}
-  .pricing-card li {{ color: #aaa; padding: 4px 0; font-size: 0.9rem; }}
-  .pricing-card li::before {{ content: "✓ "; color: {color}; }}
-  .cta {{ background: {color}; color: #fff; padding: 16px 40px; border-radius: 99px; font-size: 1.1rem; font-weight: 600; text-decoration: none; display: inline-block; margin-top: 2rem; }}
-  .label {{ font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: {color}; margin-bottom: 0.5rem; }}
-  footer {{ text-align: center; padding: 40px; color: #444; font-size: 0.85rem; }}
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#080b14;color:#c8d8f0;scroll-behavior:smooth}}
+.slide{{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:80px 40px;text-align:center;border-bottom:1px solid #1a2640;position:relative}}
+.slide:nth-child(even){{background:#0d1220}}
+.slide-num{{position:absolute;top:24px;right:32px;font-size:12px;color:#2a3a5a;font-weight:600;letter-spacing:.1em}}
+h1{{font-size:clamp(2.5rem,8vw,5rem);font-weight:900;color:#fff;margin-bottom:1rem;line-height:1.1}}
+h2{{font-size:clamp(1.5rem,4vw,2.5rem);font-weight:800;color:#fff;margin-bottom:1.5rem}}
+p{{font-size:1.15rem;color:#8090b0;max-width:720px;line-height:1.8;margin:0 auto}}
+.accent{{color:{color}}}
+.tagline{{font-size:1.4rem;color:#c8d8f0;margin-bottom:2.5rem;font-style:italic}}
+.badge{{display:inline-flex;align-items:center;gap:8px;background:{color}18;border:1px solid {color}44;color:{color};padding:8px 20px;border-radius:99px;font-size:13px;margin-bottom:2rem;font-weight:600}}
+.label{{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:{color};margin-bottom:12px;font-weight:700}}
+.stat-row{{display:flex;gap:48px;justify-content:center;flex-wrap:wrap;margin-top:3rem}}
+.stat{{text-align:center}}
+.stat-num{{font-size:2.5rem;font-weight:900;color:{color}}}
+.stat-label{{font-size:.85rem;color:#4a5a7a;margin-top:4px}}
+.pricing-grid{{display:flex;gap:20px;margin-top:2.5rem;flex-wrap:wrap;justify-content:center}}
+.pricing-card{{background:#0d1220;border:1px solid #1a2640;border-radius:20px;padding:32px;min-width:230px;text-align:left}}
+.pricing-card.featured{{border-color:{color}66;background:{color}0a}}
+.p-label{{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:{color};margin-bottom:12px;font-weight:700}}
+.price{{font-size:2rem;font-weight:900;color:#fff;margin-bottom:1rem}}
+.pricing-card ul{{list-style:none}}
+.pricing-card li{{color:#6070a0;padding:5px 0;font-size:.9rem;border-bottom:1px solid #1a2640}}
+.pricing-card li::before{{content:"✓ ";color:{color}}}
+.objection-grid{{display:grid;gap:16px;max-width:800px;width:100%;margin-top:2rem;text-align:left}}
+.objection-card{{background:#0d1220;border:1px solid #1a2640;border-radius:16px;padding:20px}}
+.obj-q{{font-weight:700;color:#fff;margin-bottom:8px}}
+.obj-a{{color:#6070a0;font-size:.9rem;line-height:1.6}}
+.persona-row{{display:flex;gap:20px;margin-top:2rem;flex-wrap:wrap;justify-content:center}}
+.persona-card{{background:#0d1220;border:1px solid #1a2640;border-radius:16px;padding:24px;max-width:300px;text-align:left}}
+.persona-name{{font-weight:800;color:#fff;margin-bottom:4px}}
+.persona-role{{font-size:.85rem;color:{color};margin-bottom:12px}}
+.persona-pains{{display:flex;flex-direction:column;gap:6px}}
+.persona-pains span{{font-size:.85rem;color:#6070a0;padding:4px 0;border-bottom:1px solid #1a2640}}
+.cta{{background:{color};color:#fff;padding:18px 48px;border-radius:99px;font-size:1.1rem;font-weight:700;text-decoration:none;display:inline-block;margin-top:2.5rem;transition:opacity .2s}}
+.cta:hover{{opacity:.85}}
+.kv-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;max-width:800px;width:100%;margin-top:2rem}}
+.kv{{background:#0d1220;border:1px solid #1a2640;border-radius:12px;padding:16px;text-align:left}}
+.kv-label{{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#4a5a7a;margin-bottom:4px}}
+.kv-val{{font-size:1.1rem;font-weight:700;color:#fff}}
+footer{{text-align:center;padding:60px;color:#2a3a5a;font-size:.85rem;border-top:1px solid #1a2640}}
+footer a{{color:#4a5a7a;text-decoration:none}}
 </style>
 </head>
 <body>
 
 <div class="slide">
-  <div class="badge">Powered by A-Impact Business OS</div>
-  <h1>{name}</h1>
-  <div class="tagline">{tagline}</div>
+  <div class="slide-num">01 / 06</div>
+  <div class="badge">⚡ Powered by A-Impact Business OS</div>
+  <h1><span class="accent">{name}</span></h1>
+  <div class="tagline">"{tagline}"</div>
   <p>{description}</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num">{deal_size:,}€</div><div class="stat-label">Ø Deal-Größe</div></div>
+    <div class="stat"><div class="stat-num">{cycle}</div><div class="stat-label">Sales Cycle (Tage)</div></div>
+    <div class="stat"><div class="stat-num">{ltv:,}€</div><div class="stat-label">LTV pro Kunde</div></div>
+  </div>
 </div>
 
 <div class="slide">
+  <div class="slide-num">02 / 06</div>
   <div class="label">Das Problem</div>
   <h2>Warum jetzt?</h2>
   <p>{uvp}</p>
+  {('<div class="persona-row">' + persona_html + '</div>') if persona_html else ''}
 </div>
 
 <div class="slide">
+  <div class="slide-num">03 / 06</div>
   <div class="label">Die Lösung</div>
   <h2>Was wir bieten</h2>
   <p>{pitch}</p>
+  <p style="margin-top:1.5rem;font-size:1rem;color:#4a5a7a">{positioning[:200] if positioning else ''}</p>
 </div>
 
 <div class="slide">
+  <div class="slide-num">04 / 06</div>
   <div class="label">Pricing</div>
   <h2>Einfach starten</h2>
   <div class="pricing-grid">{pricing_html}</div>
 </div>
 
 <div class="slide">
+  <div class="slide-num">05 / 06</div>
+  <div class="label">Einwände</div>
+  <h2>Häufige Fragen</h2>
+  <div class="objection-grid">{objection_html if objection_html else '<p>Keine typischen Einwände identifiziert.</p>'}</div>
+</div>
+
+<div class="slide">
+  <div class="slide-num">06 / 06</div>
   <div class="label">Next Steps</div>
-  <h2>Lass uns sprechen</h2>
-  <p>20 Minuten. Kein Pitch. Nur ehrlicher Austausch ob das für euch passt.</p>
-  <a href="https://a-impact.io" class="cta">Jetzt Termin buchen</a>
+  <h2>Bereit loszulegen?</h2>
+  <p>20 Minuten. Kein Pitch. Nur ein ehrliches Gespräch ob das für euch passt.</p>
+  <a href="https://a-impact.io" class="cta">Strategiegespräch buchen</a>
 </div>
 
 <footer>
-  {name} | Erstellt mit A-Impact Business OS v0.1 | {datetime.now().strftime('%d.%m.%Y')}
+  <strong>{name}</strong> | Erstellt mit A-Impact Business OS | {datetime.now().strftime('%d.%m.%Y')} | 
+  <a href="https://a-impact.io">a-impact.io</a>
 </footer>
 </body>
 </html>"""
