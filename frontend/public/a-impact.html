@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A-Impact — AI Operations für den Mittelstand</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #080b14; color: #c8d8f0; line-height: 1.6; }
+.hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 24px; border-bottom: 1px solid #1a2640; }
+.badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.3); color: #818cf8; font-size: 13px; padding: 8px 20px; border-radius: 99px; margin-bottom: 32px; }
+h1 { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 900; color: #fff; margin-bottom: 24px; line-height: 1.1; }
+.gradient { background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { font-size: 1.3rem; color: #8090b0; max-width: 700px; margin: 0 auto 48px; }
+.cta-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 64px; }
+.btn-primary { background: #4f46e5; color: #fff; font-weight: 700; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-size: 1.1rem; }
+.btn-secondary { background: #0d1220; border: 1px solid #1a2640; color: #c8d8f0; font-weight: 600; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-size: 1.1rem; }
+.stats { display: flex; gap: 48px; justify-content: center; flex-wrap: wrap; }
+.stat { text-align: center; }
+.stat-num { font-size: 2.5rem; font-weight: 900; color: #6366f1; }
+.stat-label { font-size: 0.9rem; color: #4a5a7a; margin-top: 4px; }
+section { max-width: 1100px; margin: 0 auto; padding: 80px 24px; border-bottom: 1px solid #1a2640; }
+h2 { font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 12px; }
+.section-sub { color: #4a5a7a; margin-bottom: 48px; font-size: 1.1rem; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.card { background: #0d1220; border: 1px solid #1a2640; border-radius: 16px; padding: 28px; }
+.card:hover { border-color: #1e3050; }
+.card-icon { font-size: 2rem; margin-bottom: 16px; }
+.card h3 { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.card p { font-size: 0.9rem; color: #6070a0; }
+.card-badge { display: inline-block; background: rgba(99,102,241,.1); color: #818cf8; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 99px; margin-bottom: 12px; }
+.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+.pricing-card { background: #0d1220; border: 1px solid #1a2640; border-radius: 20px; padding: 32px; }
+.pricing-card.featured { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.05); }
+.pricing-label { font-size: 12px; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
+.pricing-price { font-size: 2.5rem; font-weight: 900; color: #fff; margin-bottom: 4px; }
+.pricing-sub { color: #4a5a7a; font-size: 0.9rem; margin-bottom: 24px; }
+.pricing-features { list-style: none; }
+.pricing-features li { padding: 6px 0; color: #8090b0; font-size: 0.9rem; border-bottom: 1px solid #1a2640; }
+.pricing-features li:before { content: "✓ "; color: #6366f1; }
+.social-proof { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.quote-card { background: #0d1220; border: 1px solid #1a2640; border-radius: 16px; padding: 24px; }
+.quote-text { font-size: 1rem; color: #c8d8f0; font-style: italic; margin-bottom: 16px; }
+.quote-author { font-size: 0.85rem; color: #4a5a7a; }
+footer { text-align: center; padding: 60px 24px; color: #2a3a5a; font-size: 0.9rem; }
+footer a { color: #4a5a7a; text-decoration: none; }
+@media (max-width: 600px) { h1 { font-size: 2.5rem; } .cta-row { flex-direction: column; align-items: center; } }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">🏆 NVIDIA Inception Member · A-Impact / ALMPACT LTD</div>
+  <h1>Dein Business läuft.<br><span class="gradient">Du entscheidest nur noch.</span></h1>
+  <p class="subtitle">
+    A-Impact baut vollständig gemanagte AI-Departments für den DACH-Mittelstand.<br>
+    Sales, Marketing, Support, Finance — autonom, 24/7, messbar.
+  </p>
+  <div class="cta-row">
+    <a href="https://business-os-git-main-ai-mpact.vercel.app/demo" class="btn-primary">⚡ Live Demo in 90 Sek.</a>
+    <a href="https://cal.com/a-impact/strategy" class="btn-secondary">📅 Strategy Call buchen</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">90s</div><div class="stat-label">bis zur fertigen Firma</div></div>
+    <div class="stat"><div class="stat-num">6</div><div class="stat-label">AI-Agents pro Business</div></div>
+    <div class="stat"><div class="stat-num">198</div><div class="stat-label">Marketing Task-Typen</div></div>
+    <div class="stat"><div class="stat-num">€0</div><div class="stat-label">Setup (Operator Plan)</div></div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section>
+  <h2>Das Problem</h2>
+  <p class="section-sub">Mittelstand zahlt zu viel für zu wenig.</p>
+  <div class="grid3">
+    <div class="card">
+      <div class="card-icon">💸</div>
+      <h3>Agentur-Roulette</h3>
+      <p>€5.000-20.000/Mo für fragmentierte Ergebnisse. Keine Transparenz. Kein ROI-Nachweis.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⏰</div>
+      <h3>Founder-Zeit verbrennen</h3>
+      <p>Gründer verbringen 60% ihrer Zeit mit operativen Aufgaben statt mit Strategie und Kunden.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📉</div>
+      <h3>Wachstumsstopp</h3>
+      <p>Kein Budget für vollständige Teams. Kein Tech-Know-how für Automatisierung. Stagnation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LÖSUNG -->
+<section>
+  <h2>Unsere Lösung</h2>
+  <p class="section-sub">3 Produkte. Alles integriert. Alles gemanagte.</p>
+  <div class="grid3">
+    <div class="card">
+      <div class="card-badge">BUSINESS OS</div>
+      <div class="card-icon">⚡</div>
+      <h3>Firma in 90 Sekunden</h3>
+      <p>Beschreibung eingeben → Brand, Marketing-Plan, Sales Deck, Landing Page, 6 AI-Agents. Danach läuft dein Business autonom.</p>
+    </div>
+    <div class="card">
+      <div class="card-badge">MARKETING DREAM TEAM</div>
+      <div class="card-icon">📢</div>
+      <h3>Marketing-Department as a Service</h3>
+      <p>40 AI-Agents. 8 Squads. 198 Task-Typen. LinkedIn, SEO, Email, Ads, Analytics — alles automatisiert.</p>
+    </div>
+    <div class="card">
+      <div class="card-badge">COLONY CRM</div>
+      <div class="card-icon">🏢</div>
+      <h3>AI-First CRM</h3>
+      <p>Lead-Qualifizierung (BANT), Outreach, Email-Sequenzen, Pipeline, Stripe Billing. Komplett integriert.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section>
+  <h2>Pricing</h2>
+  <p class="section-sub">Kein Risiko. Wir verdienen wenn du verdienst.</p>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-label">Starter</div>
+      <div class="pricing-price">€49</div>
+      <div class="pricing-sub">einmalig</div>
+      <ul class="pricing-features">
+        <li>Business-Paket (11 Dokumente)</li>
+        <li>Brand + Positioning</li>
+        <li>90-Tage Marketing-Plan</li>
+        <li>Sales Deck (HTML)</li>
+        <li>CEO Dashboard (30 Tage)</li>
+      </ul>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-label">Operator ⭐</div>
+      <div class="pricing-price">€299</div>
+      <div class="pricing-sub">/Monat · + 3% Revenue Share bis €50K</div>
+      <ul class="pricing-features">
+        <li>Alles aus Starter</li>
+        <li>Landing Page deployed</li>
+        <li>6 AI-Agents dauerhaft aktiv</li>
+        <li>Wöchentliche Marketing-Kampagne</li>
+        <li>CEO Dashboard permanent</li>
+        <li>Strategy Call monatlich</li>
+      </ul>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-label">Department Bundle</div>
+      <div class="pricing-price">ab €3.500</div>
+      <div class="pricing-sub">/Monat</div>
+      <ul class="pricing-features">
+        <li>Voice Agent Department</li>
+        <li>Marketing Dream Team</li>
+        <li>Sales Automation</li>
+        <li>Custom Agent-Training</li>
+        <li>Dedicated Account Manager</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+  <h2>Wie es funktioniert</h2>
+  <p class="section-sub">3 Schritte von Idee zu laufendem Business.</p>
+  <div class="grid3">
+    <div class="card">
+      <div style="font-size:3rem; font-weight:900; color:#6366f1; margin-bottom:16px;">01</div>
+      <h3>Beschreiben (5 Min.)</h3>
+      <p>Business-Idee eingeben: Nische, Zielmarkt, Modell. Kein Tech-Wissen nötig.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:3rem; font-weight:900; color:#6366f1; margin-bottom:16px;">02</div>
+      <h3>Deployen (90 Sek.)</h3>
+      <p>Brand, Marketing-Plan, Sales Deck, Landing Page live — alles automatisch generiert und deployed.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:3rem; font-weight:900; color:#6366f1; margin-bottom:16px;">03</div>
+      <h3>Betreiben (dauerhaft)</h3>
+      <p>6 AI-Agents übernehmen Sales, Marketing, Support. Du triffst nur noch Entscheidungen im CEO Dashboard.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section style="text-align:center; border-bottom:none;">
+  <h2>Bereit loszulegen?</h2>
+  <p class="section-sub" style="margin-bottom:40px;">Dein erstes Business in 90 Sekunden. Kein Risiko.</p>
+  <div class="cta-row">
+    <a href="https://business-os-git-main-ai-mpact.vercel.app/demo" class="btn-primary">⚡ Demo starten — kostenlos</a>
+    <a href="https://cal.com/a-impact/strategy" class="btn-secondary">📅 Strategy Call buchen</a>
+  </div>
+  <p style="margin-top:24px; color:#2a3a5a; font-size:0.9rem;">
+    a-impact.io · apex@a-impact.io · ALMPACT LTD · Paphos, Zypern
+  </p>
+</section>
+
+<footer>
+  © 2026 ALMPACT LTD · A-Impact · 
+  <a href="https://a-impact.io">a-impact.io</a> · 
+  <a href="mailto:apex@a-impact.io">apex@a-impact.io</a>
+</footer>
+
+</body>
+</html>
