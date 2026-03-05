@@ -29,6 +29,10 @@ const FILE_META: Record<string, { icon: string; label: string; desc: string }> =
   'SOUL.md':           { icon: '🧠', label: 'AI Operator',    desc: 'SOUL.md für deinen Agent' },
   'QUICK_START.md':    { icon: '🚀', label: 'Quick Start',    desc: '7-Tage Aktionsplan' },
   'SALES_DECK.html':   { icon: '📑', label: 'Sales Deck',     desc: 'Fertige Präsentation' },
+  'PITCH.md':          { icon: '🎤', label: 'Pitch',          desc: '1-Pager für Investoren/Kunden' },
+  'BUSINESS_CARD.md':  { icon: '💳', label: 'Business Card',  desc: 'Ultra-Kurz für LinkedIn/Email' },
+  'SUMMARY.json':      { icon: '📋', label: 'Summary',        desc: 'Gesamtübersicht' },
+  '.env.example':      { icon: '🔧', label: 'Config',         desc: 'Environment Variables' },
 }
 
 export default function ResultPage() {
@@ -109,6 +113,18 @@ export default function ResultPage() {
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 col-span-full">
                 <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">🎨 Brand Positioning</div>
                 <p className="text-zinc-300 text-sm leading-relaxed mb-3">{preview.brand.positioning}</p>
+                {(preview.brand as any).elevator_pitch && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3 mb-3">
+                    <div className="text-xs text-zinc-500 mb-1">💬 Elevator Pitch</div>
+                    <p className="text-zinc-200 text-sm italic">"{(preview.brand as any).elevator_pitch}"</p>
+                  </div>
+                )}
+                {(preview.brand as any).differentiator && (
+                  <div className="text-xs text-emerald-400/80 mb-2">⚡ {(preview.brand as any).differentiator}</div>
+                )}
+                {(preview.brand as any).ideal_customer && (
+                  <div className="text-xs text-zinc-500 mb-3">🎯 {(preview.brand as any).ideal_customer}</div>
+                )}
                 <div className="flex flex-wrap gap-3 items-center">
                   {preview.brand.tone && (
                     <span className="text-xs bg-zinc-800 px-2 py-1 rounded text-zinc-400">Ton: {preview.brand.tone}</span>
