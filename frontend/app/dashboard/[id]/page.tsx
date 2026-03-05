@@ -296,6 +296,15 @@ export default function CEODashboard() {
             <span className="text-xs font-semibold text-white">Dokumente ansehen</span>
           </a>
           <a
+            href={`${API}/deck/${businessId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl p-4 transition-all text-center"
+          >
+            <span className="text-2xl">📑</span>
+            <span className="text-xs font-semibold text-white">Sales Deck</span>
+          </a>
+          <a
             href="https://cal.com/a-impact/strategy"
             target="_blank"
             rel="noopener noreferrer"
