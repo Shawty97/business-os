@@ -1109,3 +1109,53 @@ def get_job_preview(job_id: str):
             pass
 
     return preview
+
+
+# ── File Viewer ─────────────────────────────────────────────────────────
+
+VIEWABLE_FILES = {
+    "MARKETING_PLAN.md": "Marketing Plan",
+    "QUICK_START.md": "Quick Start Guide",
+    "REVENUE_MODEL.md": "Revenue Model",
+    "SOUL.md": "AI Operator Persona",
+}
+
+@app.get("/api/jobs/{job_id}/file/{filename}")
+def view_file(job_id: str, filename: str):
+    """View a specific file from the job output."""
+    if filename not in VIEWABLE_FILES:
+        raise HTTPException(status_code=403, detail="File not viewable")
+    
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Job not found or not done")
+    
+    output_dir = Path(state.get("output_dir", ""))
+    file_path = output_dir / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    content = file_path.read_text()
+    return {
+        "filename": filename,
+        "label": VIEWABLE_FILES[filename],
+        "content": content,
+        "length": len(content),
+        "job_id": job_id,
+    }
+
+@app.get("/api/jobs/{job_id}/files")
+def list_viewable_files(job_id: str):
+    """List files that can be viewed inline."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Job not found or not done")
+    
+    output_dir = Path(state.get("output_dir", ""))
+    available = []
+    for fname, label in VIEWABLE_FILES.items():
+        if (output_dir / fname).exists():
+            available.append({"filename": fname, "label": label})
+    
+    return {"job_id": job_id, "files": available}

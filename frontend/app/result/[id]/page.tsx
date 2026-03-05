@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
+type ViewableFile = { filename: string; label: string }
+type FileContent = { filename: string; label: string; content: string }
+
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://187.124.4.166:8001'
 
 type Result = { brand_name: string; tagline: string; files: string[]; zip_url: string }
@@ -34,6 +37,21 @@ export default function ResultPage() {
   const [preview, setPreview] = useState<Preview | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [viewableFiles, setViewableFiles] = useState<ViewableFile[]>([])
+  const [activeFile, setActiveFile] = useState<FileContent | null>(null)
+  const [fileLoading, setFileLoading] = useState(false)
+
+  const viewFile = async (filename: string) => {
+    if (activeFile?.filename === filename) { setActiveFile(null); return }
+    setFileLoading(true)
+    try {
+      const res = await fetch(`${API}/api/jobs/${id}/file/${filename}`)
+      const data = await res.json()
+      setActiveFile(data)
+    } catch {} finally {
+      setFileLoading(false)
+    }
+  }
 
   const copyShareLink = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : ''
@@ -52,6 +70,10 @@ export default function ResultPage() {
     fetch(`${API}/api/jobs/${id}/preview`)
       .then(r => r.ok ? r.json() : null)
       .then(d => d && setPreview(d))
+      .catch(() => {})
+    fetch(`${API}/api/jobs/${id}/files`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d?.files && setViewableFiles(d.files))
       .catch(() => {})
   }, [id])
 
@@ -183,7 +205,37 @@ export default function ResultPage() {
           </a>
         </div>
 
-        <div className="mt-6 text-center">
+        {/* Inline File Viewer */}
+        {viewableFiles.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-xl font-bold mb-4 text-zinc-300">📖 Vorschau ansehen</h2>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {viewableFiles.map(f => (
+                <button
+                  key={f.filename}
+                  onClick={() => viewFile(f.filename)}
+                  className={`text-sm px-4 py-2 rounded-lg border transition-colors ${activeFile?.filename === f.filename ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            {fileLoading && <div className="text-zinc-500 text-sm animate-pulse">Lädt...</div>}
+            {activeFile && !fileLoading && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wide">{activeFile.label}</div>
+                  <button onClick={() => setActiveFile(null)} className="text-zinc-600 hover:text-white text-xs">✕ Schließen</button>
+                </div>
+                <div className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  {activeFile.content}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-8 text-center">
           <a href="/build" className="text-indigo-400 hover:text-indigo-300 text-sm">
             + Nächstes Business bauen
           </a>
