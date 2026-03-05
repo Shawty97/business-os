@@ -69,11 +69,11 @@ export default function CEODashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           business_id: businessId,
-          task: 'Erstelle ein prägnantes CEO-Briefing für heute. Analysiere den aktuellen Stand und gib 3 Empfehlungen.',
+          task: 'Erstelle ein prägnantes CEO-Briefing für heute. Was sind die wichtigsten Prioritäten?',
           context: {
-            business_name: 'Mein Business (Business OS)',
+            business_name: brandName || 'Mein Business',
             period: 'heute',
-            metrics: { revenue_today: 0, leads_active: 0, tickets_open: 0, agents_active: 4 }
+            metrics: { revenue_today: 0, leads_active: 0, tickets_open: 0, agents_active: 6 }
           }
         })
       })
