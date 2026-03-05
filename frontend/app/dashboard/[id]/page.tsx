@@ -108,13 +108,31 @@ export default function CEODashboard() {
   ]
 
   const agents = [
-    { name: 'Sales', icon: '🎯', status: 'active' },
-    { name: 'Marketing', icon: '📢', status: 'active' },
-    { name: 'Support', icon: '💬', status: 'active' },
-    { name: 'Analytics', icon: '📊', status: 'active' },
-    { name: 'Finance', icon: '💰', status: 'active' },
-    { name: 'Ops', icon: '⚡', status: 'active' },
+    { name: 'Sales', icon: '🎯', status: 'active', endpoint: 'sales', task: 'Analysiere Leads und erstelle Top-3 Empfehlungen für heute' },
+    { name: 'Marketing', icon: '📢', status: 'active', endpoint: 'marketing', task: 'Erstelle 3 LinkedIn Post Ideen für diese Woche' },
+    { name: 'Support', icon: '💬', status: 'active', endpoint: 'support', task: 'Wie reagiere ich auf einen Kunden der sein Abo kündigen möchte?' },
+    { name: 'Analytics', icon: '📊', status: 'active', endpoint: 'analytics', task: 'CEO Briefing für heute' },
+    { name: 'Finance', icon: '💰', status: 'active', endpoint: 'finance', task: 'Erstelle einen Monats-Report mit Umsatzprognose' },
+    { name: 'Ops', icon: '⚡', status: 'active', endpoint: 'ops', task: 'Welche Prozesse können diese Woche automatisiert werden?' },
   ]
+  const [agentResult, setAgentResult] = useState<{name:string; result:string} | null>(null)
+  const [agentLoading, setAgentLoading] = useState('')
+
+  const testAgent = async (agent: typeof agents[0]) => {
+    setAgentLoading(agent.name)
+    setAgentResult(null)
+    try {
+      const res = await fetch(`${API}/api/agents/${agent.endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ business_id: businessId, task: agent.task, context: { business_name: brandName || 'Mein Business' } })
+      })
+      const data = await res.json()
+      const result = data.briefing || data.response || data.plan || data.strategy || data.report || JSON.stringify(data).slice(0, 500)
+      setAgentResult({ name: agent.name, result })
+    } catch { setAgentResult({ name: agent.name, result: 'Fehler beim Aufrufen des Agents.' }) }
+    finally { setAgentLoading('') }
+  }
 
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
@@ -172,17 +190,36 @@ export default function CEODashboard() {
         {/* Agent Status */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
           <h2 className="font-bold text-white mb-3 flex items-center gap-2">
-            🤖 <span>Agent Status</span>
+            🤖 <span>Agents — klicken zum Testen</span>
           </h2>
           <div className="grid grid-cols-2 gap-2">
             {agents.map(agent => (
-              <div key={agent.name} className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2">
+              <button
+                key={agent.name}
+                onClick={() => testAgent(agent)}
+                disabled={agentLoading === agent.name}
+                className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg px-3 py-2 text-left transition-colors group"
+              >
                 <span>{agent.icon}</span>
-                <span className="text-white text-sm font-medium">{agent.name}</span>
-                <span className="ml-auto w-2 h-2 rounded-full bg-emerald-400"></span>
-              </div>
+                <span className="text-white text-sm font-medium flex-1">{agent.name}</span>
+                {agentLoading === agent.name
+                  ? <span className="animate-spin text-indigo-400">⟳</span>
+                  : <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:bg-indigo-400 transition-colors"></span>
+                }
+              </button>
             ))}
           </div>
+          {agentResult && (
+            <div className="mt-4 bg-zinc-800 rounded-xl p-4">
+              <div className="text-xs font-semibold text-indigo-400 mb-2">{agentResult.name} Agent →</div>
+              <div className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">
+                {agentResult.result}
+              </div>
+              <button onClick={() => setAgentResult(null)} className="text-xs text-zinc-600 hover:text-white mt-2">
+                ✕ Schließen
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
