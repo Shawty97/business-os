@@ -58,7 +58,7 @@ export default function Home() {
         <div className="grid grid-cols-3 gap-6 mb-20 max-w-2xl mx-auto">
           {[
             { value: '90s', label: 'bis zur fertigen Firma' },
-            { value: '11', label: 'Dokumente pro Business' },
+            { value: '12', label: 'Dokumente pro Business' },
             { value: '6', label: 'AI-Agenten im Team' },
           ].map(({ value, label }) => (
             <div key={label} className="text-center">
@@ -83,7 +83,7 @@ export default function Home() {
               {
                 num: '02',
                 title: 'Generieren',
-                desc: '90 Sekunden. 11 Dokumente: Brand, Marketing-Plan, Sales Deck, Tech Stack, Revenue-Modell, CEO Dashboard.',
+                desc: '90 Sekunden. 12 Dokumente: Brand, Marketing-Plan, Sales Deck, Tech Stack, Revenue-Modell, CEO Dashboard.',
                 icon: '⚡',
               },
               {
