@@ -5,14 +5,14 @@ import { useRouter, useParams } from 'next/navigation'
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://187.124.4.166:8001'
 
 const STEPS = [
-  'Generiere Brand...',
-  'Erstelle Marketing-Plan...',
-  'Baue Sales-Materialien...',
-  'Analysiere Tech Stack...',
-  'Konfiguriere AI Agents...',
-  'Berechne Revenue Modell...',
-  'Erstelle ZIP-Archiv...',
-  'Fertig! ✅',
+  { text: 'Generiere Brand & Positioning...', icon: '🎨', detail: 'AI analysiert deinen Markt und erstellt eine einzigartige Marke' },
+  { text: 'Erstelle 90-Tage Marketing-Plan...', icon: '📢', detail: 'Woche für Woche, Task für Task — sofort umsetzbar' },
+  { text: 'Baue Sales Deck & Outreach...', icon: '💰', detail: 'Pricing, Pitch, Einwandbehandlung, LinkedIn Templates' },
+  { text: 'Analysiere optimalen Tech Stack...', icon: '⚙️', detail: 'Frontend, Backend, AI-Layer — alles konfiguriert' },
+  { text: 'Trainiere 6 AI-Agenten...', icon: '🤖', detail: 'Sales, Marketing, Support, Finance, Analytics, Ops' },
+  { text: 'Berechne Revenue-Modell...', icon: '📊', detail: 'Break-Even, Projektionen, KPIs — realistisch, nicht Fantasy' },
+  { text: 'Erstelle Pitch & Business Card...', icon: '📑', detail: 'Fertig zum Teilen mit Investoren und Kunden' },
+  { text: 'Dein Business ist fertig! ✅', icon: '🚀', detail: 'CEO Dashboard wird geladen...' },
 ]
 
 export default function ProgressPage() {
@@ -56,13 +56,28 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {STEPS.map((step, i) => {
-            const done = status.progress > (i + 1) * (100 / STEPS.length)
-            const active = status.current_step === step
+            const threshold = (i + 1) * (100 / STEPS.length)
+            const done = status.progress >= threshold
+            const active = status.progress >= threshold - (100 / STEPS.length) && status.progress < threshold
             return (
-              <div key={step} className={`text-left text-xs px-3 py-2 rounded-lg ${done ? 'bg-green-500/10 text-green-400' : active ? 'bg-indigo-500/10 text-indigo-400' : 'text-zinc-600'}`}>
-                {done ? '✓ ' : active ? '⟳ ' : '○ '}{step}
+              <div key={step.text} className={`text-left px-4 py-3 rounded-xl transition-all duration-500 ${done ? 'bg-emerald-500/10 border border-emerald-500/20' : active ? 'bg-indigo-500/10 border border-indigo-500/20 animate-pulse' : 'border border-transparent'}`}>
+                <div className="flex items-center gap-3">
+                  <span className={`text-lg ${done ? '' : active ? 'animate-spin-slow' : 'opacity-30'}`}>
+                    {done ? '✅' : step.icon}
+                  </span>
+                  <div>
+                    <div className={`text-sm font-semibold ${done ? 'text-emerald-400' : active ? 'text-indigo-400' : 'text-zinc-600'}`}>
+                      {step.text}
+                    </div>
+                    {(done || active) && (
+                      <div className={`text-xs mt-0.5 ${done ? 'text-emerald-400/60' : 'text-indigo-400/60'}`}>
+                        {step.detail}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )
           })}
