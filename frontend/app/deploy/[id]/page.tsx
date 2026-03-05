@@ -139,16 +139,32 @@ export default function DeployPage() {
 
         {isFailed && (
           <>
-            <div className="text-6xl mb-6">⚠️</div>
-            <h2 className="text-3xl font-bold mb-3">Deploy fehlgeschlagen</h2>
-            <p className="text-zinc-400 mb-4">{deployState.error || 'Unbekannter Fehler'}</p>
+            <div className="text-6xl mb-6">
+              {deployState.error?.includes('Limit') || deployState.error?.includes('limit') ? '⏳' : '⚠️'}
+            </div>
+            <h2 className="text-3xl font-bold mb-3">
+              {deployState.error?.includes('Limit') || deployState.error?.includes('limit') ? 'Deploy-Limit erreicht' : 'Deploy fehlgeschlagen'}
+            </h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-6 text-left">
+              <p className="text-zinc-300 text-sm leading-relaxed">{deployState.error || 'Unbekannter Fehler'}</p>
+              {(deployState.error?.includes('Limit') || deployState.error?.includes('limit')) && (
+                <p className="text-indigo-400 text-sm mt-2">
+                  💡 In der Zwischenzeit: CEO Dashboard + alle Dokumente sind bereits verfügbar!
+                </p>
+              )}
+            </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => { setStarted(false); setDeployState({ deploy_status: 'pending', url: '', error: '' }); startDeploy() }}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl"
-              >
-                Erneut versuchen
-              </button>
+              {!(deployState.error?.includes('Limit') || deployState.error?.includes('limit')) && (
+                <button
+                  onClick={() => { setStarted(false); setDeployState({ deploy_status: 'pending', url: '', error: '' }); startDeploy() }}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl"
+                >
+                  Erneut versuchen
+                </button>
+              )}
+              <a href={`/dashboard/${id}`} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-center">
+                CEO Dashboard öffnen
+              </a>
               <a href={`/result/${id}`} className="flex-1 bg-zinc-800 text-white font-bold py-3 rounded-xl text-center">
                 Zurück
               </a>
