@@ -116,6 +116,19 @@ def run_build_job(job_id: str, req: BuildRequest):
             "zip_path": str(zip_path),
             "files": files,
         })
+        
+        # Telegram notification to Robert
+        try:
+            _notify_telegram(
+                f"⚡ *Neues Business erstellt!*\n\n"
+                f"*Brand:* {brand_name}\n"
+                f"*Tagline:* {tagline}\n"
+                f"*Files:* {len(files)} Dokumente\n\n"
+                f"[CEO Dashboard öffnen](https://business-os-git-main-ai-mpact.vercel.app/dashboard/{job_id})\n"
+                f"[Result ansehen](https://business-os-git-main-ai-mpact.vercel.app/result/{job_id})"
+            )
+        except Exception:
+            pass
 
     except Exception as e:
         import traceback
@@ -976,3 +989,41 @@ def _get_uptime() -> str:
         return f"{h}h {m}m"
     except:
         return "unknown"
+
+
+# ── Telegram Notifications ──────────────────────────────────────────────
+
+def _notify_telegram(message: str):
+    """Send notification to Robert via Telegram bot."""
+    import urllib.request, urllib.parse
+    
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")  # Robert's chat ID
+    
+    if not bot_token or not chat_id:
+        return
+    
+    payload = json.dumps({
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": False,
+    }).encode()
+    
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+        data=payload,
+        headers={"Content-Type": "application/json", "User-Agent": "BusinessOS/2.0"},
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=5) as r:
+        return json.loads(r.read())
+
+@app.post("/api/notify/test")
+def test_notification(msg: str = "Apex ist online ⚡"):
+    """Test Telegram notification."""
+    try:
+        _notify_telegram(msg)
+        return {"status": "sent"}
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
