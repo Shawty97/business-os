@@ -1053,10 +1053,13 @@ def get_job_preview(job_id: str):
         try:
             brand = json.loads(brand_file.read_text())
             preview["brand"] = {
-                "colors": brand.get("colors", brand.get("brand_colors", {})),
-                "positioning": brand.get("positioning", brand.get("unique_value_proposition", ""))[:200],
+                "colors": brand.get("colors", brand.get("brand_colors", brand.get("farben", {}))),
+                "positioning": (brand.get("positioning") or brand.get("unique_value_proposition") or "")[:200],
                 "tone": brand.get("tone_of_voice", brand.get("tone", "")),
                 "target": brand.get("target_market", ""),
+                "name": brand.get("empfehlung", brand.get("recommendation", "")),
+                "tagline": brand.get("empfohlene_tagline", brand.get("recommended_tagline", "")),
+                "names_alternatives": brand.get("namen", brand.get("names", []))[:3],
             }
         except Exception:
             pass

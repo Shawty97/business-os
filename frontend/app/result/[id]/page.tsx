@@ -7,7 +7,10 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://187.124.4.166:8001'
 type Result = { brand_name: string; tagline: string; files: string[]; zip_url: string }
 type Preview = {
   brand_name: string; tagline: string
-  brand: { colors?: Record<string,string>; positioning?: string; tone?: string }
+  brand: {
+    colors?: Record<string,string>; positioning?: string; tone?: string
+    names_alternatives?: string[]; tagline?: string
+  }
   quick_start_bullets: string[]
   revenue_headline: string
 }
@@ -65,11 +68,22 @@ export default function ResultPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
             {preview.brand.positioning && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 col-span-full">
-                <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">🎨 Positioning</div>
-                <p className="text-zinc-300 text-sm leading-relaxed">{preview.brand.positioning}</p>
-                {preview.brand.tone && (
-                  <div className="mt-2 text-xs text-zinc-500">Ton: {preview.brand.tone}</div>
-                )}
+                <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">🎨 Brand Positioning</div>
+                <p className="text-zinc-300 text-sm leading-relaxed mb-3">{preview.brand.positioning}</p>
+                <div className="flex flex-wrap gap-3 items-center">
+                  {preview.brand.tone && (
+                    <span className="text-xs bg-zinc-800 px-2 py-1 rounded text-zinc-400">Ton: {preview.brand.tone}</span>
+                  )}
+                  {preview.brand.colors && Object.entries(preview.brand.colors).slice(0, 3).map(([k, v]) => (
+                    <div key={k} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                      <div className="w-4 h-4 rounded-full border border-zinc-700" style={{ backgroundColor: v as string }} />
+                      <span>{v as string}</span>
+                    </div>
+                  ))}
+                  {preview.brand.names_alternatives && preview.brand.names_alternatives.length > 1 && (
+                    <div className="text-xs text-zinc-500">Alt. Namen: {preview.brand.names_alternatives.slice(1).join(', ')}</div>
+                  )}
+                </div>
               </div>
             )}
             {preview.quick_start_bullets.length > 0 && (
