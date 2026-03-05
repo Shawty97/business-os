@@ -81,6 +81,9 @@ def run_build_job(job_id: str, req: BuildRequest):
             "target_market": req.target_market,
             "business_model": req.business_model,
             "founder_name": req.founder_name,
+            # German keys for business_os.py compatibility
+            "zielgruppe": req.target_market,
+            "geschaeftsmodell": req.business_model,
         }
 
         set_state(job_id, {"status": "running", "progress": 30, "current_step": "Erstelle Inhalte mit AI..."})
