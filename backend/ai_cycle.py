@@ -68,15 +68,43 @@ def run_ai_marketing(brand: dict, business_desc: str) -> dict:
 
 
 def run_ai_sales(brand: dict, business_desc: str) -> dict:
-    """Sales Agent: Identify prospects and create outreach."""
+    """Sales Agent: Identify prospects and create outreach. Tries MDT for cold email."""
     name = brand.get("empfehlung", "Business")
     target = brand.get("positioning", "")
+    uvp = brand.get("unique_value_proposition", "")
+    
+    # Try MDT for cold email
+    mdt_email = None
+    try:
+        resp = requests.post(
+            f"{MDT_URL}/tasks/execute",
+            headers={"Content-Type": "application/json", "X-Tenant-ID": "a-impact"},
+            json={
+                "task_type": "write_cold_email",
+                "context": {
+                    "company_name": name,
+                    "product": uvp[:200],
+                    "target_audience": target[:150],
+                    "tone": "Professional, direkt",
+                }
+            },
+            timeout=30
+        )
+        if resp.status_code == 200:
+            mdt_data = resp.json()
+            mdt_email = mdt_data.get("result") or mdt_data.get("content")
+    except Exception:
+        pass
     
     result = call_gpt(
         f"Du bist der Sales Agent von {name}. Dein Job: Neue Leads finden und qualifizieren.",
-        f"Business: {name}\nPositionierung: {target[:200]}\n\nErstelle:\n1. 3 ideale Kundenprofile (ICP) für heute\n2. Für jeden ICP: Eine personalisierte LinkedIn Nachricht (< 300 Zeichen)\n3. Qualifizierungsfrage (BANT)\n\nSei spezifisch, nicht generisch.",
+        f"Business: {name}\nPositionierung: {target[:200]}\nUVP: {uvp[:200]}\n\nErstelle:\n1. 3 ideale Kundenprofile (ICP) mit konkretem Pain Point\n2. Für jeden ICP: Eine personalisierte LinkedIn Nachricht (< 300 Zeichen)\n3. Für jeden ICP: Eine Cold Email (max 100 Wörter)\n4. Qualifizierungsfrage (BANT)\n\nSei spezifisch, nicht generisch. Datum: {datetime.now().strftime('%d.%m.%Y')}",
     )
-    return {"agent": "sales", "action": "prospect_outreach", "result": result}
+    
+    if mdt_email:
+        result = f"[MDT Cold Email]\n{mdt_email}\n\n---\n\n[GPT-4o Sales Intelligence]\n{result}"
+    
+    return {"agent": "sales", "action": "prospect_outreach_mdt", "result": result}
 
 
 def run_ai_analytics(brand: dict, actions_log: list) -> dict:
