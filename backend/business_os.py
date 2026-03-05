@@ -47,24 +47,33 @@ def ask_gpt(system: str, user: str, model: str = "gpt-4o") -> str:
 
 def generate_brand(description: str, qualifications: dict) -> dict:
     print("  🎨 Generiere Brand...")
-    system = """Du bist ein Expert für Business-Branding in der DACH-Region. 
-    Erstelle Markennamen und Branding für das beschriebene Business.
+    system = """Du bist ein weltweit führender Brand Strategist mit Erfahrung bei Y Combinator Startups.
+    Du erstellst Markennamen die sofort im Gedächtnis bleiben und Vertrauen ausstrahlen.
+    Denke wie ein CMO der €100M Unternehmen aufgebaut hat.
     Antworte NUR mit einem JSON-Objekt, kein Markdown."""
     
     user = f"""Business-Beschreibung: {description}
     Zielgruppe: {qualifications.get('zielgruppe', 'unbekannt')}
     Land: {qualifications.get('land', 'DE')}
     
+    WICHTIG: Die Namen müssen KURZ (1-2 Wörter), EINPRÄGSAM und VERFÜGBAR sein.
+    Taglines müssen den KONKRETEN Nutzen kommunizieren (nicht generisch).
+    Die UVP muss in 10 Sekunden verstanden werden.
+    
     Erstelle JSON mit:
     {{
         "namen": ["Name1", "Name2", "Name3", "Name4", "Name5"],
         "empfehlung": "Name1",
+        "nische": "Exakte Nische in 3-5 Wörtern",
         "taglines": ["Tagline1", "Tagline2", "Tagline3"],
         "empfohlene_tagline": "Tagline1",
         "farben": {{"primaer": "#hexcode", "sekundaer": "#hexcode", "akzent": "#hexcode"}},
-        "tone_of_voice": "Beschreibung des Kommunikationsstils",
-        "unique_value_proposition": "1-2 Sätze UVP",
-        "positioning": "Marktpositionierung"
+        "tone_of_voice": "Beschreibung des Kommunikationsstils (3-4 konkrete Adjektive)",
+        "unique_value_proposition": "1-2 Sätze — was genau tun wir, für wen, und warum sind wir besser als alle Alternativen?",
+        "positioning": "Positionierung im Markt: Wer sind wir? Gegen wen konkurrieren wir? Was macht uns einzigartig?",
+        "differentiator": "Der EINE Grund warum jemand uns wählt statt der Konkurrenz",
+        "ideal_customer": "Beschreibung des perfekten Kunden in 2 Sätzen",
+        "elevator_pitch": "30-Sekunden Pitch den jeder sofort versteht"
     }}"""
     
     raw = ask_gpt(system, user)
