@@ -42,6 +42,7 @@ export default function CEODashboard() {
   // Load decisions + brand on mount
   useEffect(() => {
     loadDecisions()
+    loadRunnerStatus()
     // Try to get brand name from result
     fetch(`${API}/api/jobs/${businessId}/result`)
       .then(r => r.ok ? r.json() : null)
@@ -117,6 +118,37 @@ export default function CEODashboard() {
   ]
   const [agentResult, setAgentResult] = useState<{name:string; result:string} | null>(null)
   const [agentLoading, setAgentLoading] = useState('')
+  const [runnerStatus, setRunnerStatus] = useState<any>(null)
+  const [runnerLoading, setRunnerLoading] = useState(false)
+  const [aiCycleResults, setAiCycleResults] = useState<any[]>([])
+  const [aiCycleLoading, setAiCycleLoading] = useState(false)
+
+  const loadRunnerStatus = async () => {
+    try {
+      const res = await fetch(`${API}/api/v3/runner/status/${businessId}`)
+      if (res.ok) setRunnerStatus(await res.json())
+    } catch {}
+  }
+
+  const startRunner = async () => {
+    setRunnerLoading(true)
+    try {
+      const res = await fetch(`${API}/api/v3/runner/start/${businessId}`, { method: 'POST' })
+      const data = await res.json()
+      setRunnerStatus(data.status)
+    } catch {} finally { setRunnerLoading(false) }
+  }
+
+  const runAiCycle = async () => {
+    setAiCycleLoading(true)
+    setAiCycleResults([])
+    try {
+      const res = await fetch(`${API}/api/v3/runner/ai-cycle/${businessId}`, { method: 'POST' })
+      const data = await res.json()
+      setAiCycleResults(data.results || [])
+      setRunnerStatus(data.status)
+    } catch {} finally { setAiCycleLoading(false) }
+  }
 
   const testAgent = async (agent: typeof agents[0]) => {
     setAgentLoading(agent.name)
@@ -221,6 +253,81 @@ export default function CEODashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Agent Runner — BOS v3 */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            🚀 <span>Agent Runner</span>
+            {runnerStatus?.running && (
+              <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                AKTIV
+              </span>
+            )}
+          </h2>
+          <div className="flex gap-2">
+            {!runnerStatus?.running ? (
+              <button onClick={startRunner} disabled={runnerLoading}
+                className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-semibold">
+                {runnerLoading ? '⟳ Starte...' : '▶ Runner starten'}
+              </button>
+            ) : (
+              <button onClick={runAiCycle} disabled={aiCycleLoading}
+                className="text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-semibold">
+                {aiCycleLoading ? '⟳ Agents arbeiten...' : '🧠 AI-Zyklus starten'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {runnerStatus && (
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-zinc-800 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-white">{runnerStatus.total_actions}</div>
+              <div className="text-xs text-zinc-500">Aktionen</div>
+            </div>
+            <div className="bg-zinc-800 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-white">{runnerStatus.uptime || '0m'}</div>
+              <div className="text-xs text-zinc-500">Uptime</div>
+            </div>
+            <div className="bg-zinc-800 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-white">{runnerStatus.agents_active?.length || 0}</div>
+              <div className="text-xs text-zinc-500">Agents</div>
+            </div>
+          </div>
+        )}
+
+        {aiCycleLoading && (
+          <div className="text-center py-8">
+            <div className="text-4xl animate-bounce mb-3">🧠</div>
+            <div className="text-indigo-400 font-semibold animate-pulse">6 AI-Agents arbeiten mit GPT-4o...</div>
+            <div className="text-xs text-zinc-500 mt-1">Marketing · Sales · Analytics · Support · Finance · Ops</div>
+          </div>
+        )}
+
+        {aiCycleResults.length > 0 && (
+          <div className="space-y-3 mt-4">
+            {aiCycleResults.map((r, i) => (
+              <details key={i} className="bg-zinc-800 rounded-xl border border-zinc-700">
+                <summary className="px-4 py-3 cursor-pointer flex items-center gap-2 text-sm font-semibold text-white hover:text-indigo-400">
+                  <span>{{'marketing':'📢','sales':'🎯','analytics':'📊','support':'💬','finance':'💰','ops':'⚡'}[r.agent] || '🤖'}</span>
+                  <span className="capitalize">{r.agent}</span>
+                  <span className="text-xs text-zinc-500 ml-auto">{r.action}</span>
+                </summary>
+                <div className="px-4 pb-4 text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
+                  {r.result}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+
+        {!runnerStatus && (
+          <div className="text-zinc-500 text-sm text-center py-4">
+            Agent Runner noch nicht gestartet. Klicke "Runner starten" um dein Business autonom zu betreiben.
+          </div>
+        )}
       </div>
 
       {/* Decision Queue — THE UNIQUE FEATURE */}
