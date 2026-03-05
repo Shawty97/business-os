@@ -9,8 +9,11 @@ export default function Header() {
           <span>Business OS</span>
         </Link>
         <nav className="flex items-center gap-6">
-          <Link href="/build" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
-            Business bauen
+          <Link href="/demo" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+            Live Demo
+          </Link>
+          <Link href="/admin" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+            Admin
           </Link>
           <Link
             href="/build"
