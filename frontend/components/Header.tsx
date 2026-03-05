@@ -15,6 +15,9 @@ export default function Header() {
           <Link href="/pricing" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
             Pricing
           </Link>
+          <Link href="/mdt" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+            MDT
+          </Link>
           <Link href="/runners" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
             Runners
           </Link>
