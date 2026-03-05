@@ -1141,6 +1141,7 @@ def get_job_preview(job_id: str):
 # ── File Viewer ─────────────────────────────────────────────────────────
 
 VIEWABLE_FILES = {
+    "BUSINESS_CARD.md": "Business Card",
     "PITCH.md": "Pitch (1-Pager)",
     "QUICK_START.md": "Quick Start Guide",
     "MARKETING_PLAN.md": "Marketing Plan",
@@ -1214,3 +1215,130 @@ def view_sales_deck(job_id: str):
     </div>"""
     html_content = html_content.replace("<body>", f"<body>{nav}")
     return HTMLResponse(html_content)
+
+
+# ── BOS v3: Agent Runner — Firma-Operator ──────────────────────────────
+
+from agent_runner import start_runner, stop_runner, get_runner, list_runners, BusinessRunner
+
+@app.post("/api/v3/runner/start/{job_id}")
+def api_start_runner(job_id: str):
+    """Start the Agent Runner — business begins operating autonomously."""
+    result = start_runner(job_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {"message": f"Runner gestartet für {result.get('brand_name','Business')}", "status": result}
+
+@app.post("/api/v3/runner/stop/{job_id}")
+def api_stop_runner(job_id: str):
+    """Stop the Agent Runner."""
+    result = stop_runner(job_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {"message": "Runner gestoppt", "status": result}
+
+@app.get("/api/v3/runner/status/{job_id}")
+def api_runner_status(job_id: str):
+    """Get runner status and recent actions."""
+    runner = get_runner(job_id)
+    if not runner:
+        raise HTTPException(status_code=404, detail="Runner not found")
+    return runner.get_status()
+
+@app.post("/api/v3/runner/cycle/{job_id}")
+def api_runner_cycle(job_id: str):
+    """Manually trigger one daily agent cycle."""
+    runner = get_runner(job_id)
+    if not runner:
+        raise HTTPException(status_code=404, detail="Runner not found")
+    if not runner.running:
+        runner.start()
+    results = runner.run_daily_cycle()
+    return {"cycle_completed": True, "actions": results, "status": runner.get_status()}
+
+@app.get("/api/v3/runners")
+def api_list_runners():
+    """List all business runners."""
+    return {"runners": list_runners()}
+
+
+# ── BOS v3: AI-Powered Daily Cycle ─────────────────────────────────────
+
+from ai_cycle import run_full_ai_cycle, run_ai_marketing, run_ai_sales
+
+@app.post("/api/v3/runner/ai-cycle/{job_id}")
+def api_ai_cycle(job_id: str):
+    """Run a REAL AI-powered daily cycle — all 6 agents call GPT-4o."""
+    runner = get_runner(job_id)
+    if not runner:
+        raise HTTPException(status_code=404, detail="Runner not found")
+    
+    # Load brand data
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Business not built yet")
+    
+    output_dir = Path(state.get("output_dir", ""))
+    brand = {}
+    brand_file = output_dir / "BRAND.json"
+    if brand_file.exists():
+        brand = json.loads(brand_file.read_text())
+    
+    description = state.get("description", "")
+    
+    # Run full AI cycle
+    results = run_full_ai_cycle(job_id, brand, description, runner.actions_log)
+    
+    # Log all results to runner
+    for r in results:
+        runner.log_action(r["agent"], r["action"], r["result"])
+    
+    return {
+        "cycle_completed": True,
+        "ai_powered": True,
+        "agents_called": len(results),
+        "results": results,
+        "status": runner.get_status()
+    }
+
+@app.post("/api/v3/runner/ai-marketing/{job_id}")
+def api_ai_marketing_only(job_id: str):
+    """Run only the Marketing Agent with real AI."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Business not built yet")
+    
+    output_dir = Path(state.get("output_dir", ""))
+    brand = {}
+    brand_file = output_dir / "BRAND.json"
+    if brand_file.exists():
+        brand = json.loads(brand_file.read_text())
+    
+    result = run_ai_marketing(brand, state.get("description", ""))
+    
+    runner = get_runner(job_id)
+    if runner:
+        runner.log_action(result["agent"], result["action"], result["result"])
+    
+    return result
+
+@app.post("/api/v3/runner/ai-sales/{job_id}")
+def api_ai_sales_only(job_id: str):
+    """Run only the Sales Agent with real AI."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Business not built yet")
+    
+    output_dir = Path(state.get("output_dir", ""))
+    brand = {}
+    brand_file = output_dir / "BRAND.json"
+    if brand_file.exists():
+        brand = json.loads(brand_file.read_text())
+    
+    result = run_ai_sales(brand, state.get("description", ""))
+    
+    runner = get_runner(job_id)
+    if runner:
+        runner.log_action(result["agent"], result["action"], result["result"])
+    
+    return result

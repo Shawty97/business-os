@@ -492,6 +492,29 @@ def create_env_example(tech: dict, agents: list) -> str:
     return "\n".join(lines)
 
 
+def generate_business_card(brand: dict, sales: dict, description: str) -> str:
+    """Ultra-short business card — usable as LinkedIn bio, cold email opener, or social post."""
+    name = brand.get('empfehlung', 'Business')
+    tagline = brand.get('empfohlene_tagline', '')
+    uvp = brand.get('unique_value_proposition', '')
+    zielgruppe = brand.get('positioning', '')[:100]
+    pitch = sales.get('sales_pitch_elevator', '')[:200]
+    starter = next((p for p in sales.get('pricing_modelle', []) if 'tarter' in p.get('name','')), {})
+    
+    return f"""# {name}
+
+{tagline}
+
+**Was wir machen:** {uvp}
+
+**Für wen:** {zielgruppe}
+
+**In einem Satz:** {pitch}
+
+**Einstieg:** {starter.get('preis', 'Kontakt anfragen')} | 📧 apex@a-impact.io | 🌐 a-impact.io
+"""
+
+
 def generate_pitch_md(brand: dict, sales: dict, description: str, qualifications: dict) -> str:
     """1-pager pitch document — for email or quick sharing."""
     name = brand.get('empfehlung', 'Business')
@@ -563,6 +586,7 @@ def build_business(description: str, qualifications: dict) -> Path:
     sales_deck = create_sales_deck_html(brand, sales, description)
     env_example = create_env_example(tech, agents)
     pitch_md = generate_pitch_md(brand, sales, description, qualifications)
+    business_card = generate_business_card(brand, sales, description)
     
     # Write all files
     print("  💾 Schreibe Dateien...")
@@ -577,6 +601,7 @@ def build_business(description: str, qualifications: dict) -> Path:
     (output_path / "SALES_DECK.html").write_text(sales_deck)
     (output_path / ".env.example").write_text(env_example)
     (output_path / "PITCH.md").write_text(pitch_md)
+    (output_path / "BUSINESS_CARD.md").write_text(business_card)
     
     # Write business summary
     summary = {
