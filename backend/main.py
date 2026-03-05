@@ -875,8 +875,8 @@ async def _run_marketing_launch(req: MarketingLaunchRequest, launch_id: str):
     results = {}
     
     tasks = [
-        ("linkedin_post", {"topic": f"{req.brand_name} — {req.tagline or req.niche}", "tone": "thought_leadership", "target_audience": req.target_market}),
-        ("write_email_sequence", {"brand": req.brand_name, "product": req.niche, "target": req.target_market, "sequence_length": 3}),
+        ("write_linkedin_post", {"topic": f"{req.brand_name} — {req.tagline or req.niche}", "tone": "thought_leadership", "target_audience": req.target_market}),
+        ("write_cold_email", {"prospect": req.target_market, "company": req.brand_name, "pain_point": f"manuelle Arbeit in {req.niche}", "solution": f"{req.brand_name}: {req.tagline}", "sender_name": req.founder_name or "Team", "sender_company": req.brand_name}),
         ("plan_content_calendar", {"brand": req.brand_name, "niche": req.niche, "platforms": ["LinkedIn", "Instagram", "Email"], "duration_weeks": 4}),
     ]
     
