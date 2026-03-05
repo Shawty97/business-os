@@ -30,10 +30,10 @@ export default function Home() {
             Business starten →
           </a>
           <a
-            href="#how-it-works"
+            href="/demo"
             className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold px-8 py-4 rounded-xl text-lg transition-colors border border-zinc-800"
           >
-            Wie funktioniert das?
+            ⚡ Live Demo (90 Sek.)
           </a>
         </div>
 
