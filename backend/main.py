@@ -492,6 +492,7 @@ class DeployRequest(BaseModel):
     business_model: str
     primary_color: str = "#6366f1"  # indigo default
     founder_name: str = ""
+    founder_email: str = ""  # for auto welcome email after deploy
 
 class DeployStatus(BaseModel):
     business_id: str
@@ -590,6 +591,20 @@ def _run_deploy(req: DeployRequest):
                 "vercel_id": deploy_data.get("id", ""),
                 "error": ""
             }
+
+            # Auto-send welcome email if founder_email provided
+            if req.founder_email:
+                try:
+                    _send_welcome_auto(
+                        business_id=req.business_id,
+                        brand_name=req.brand_name,
+                        founder_email=req.founder_email,
+                        founder_name=req.founder_name,
+                        landing_url=deploy_url,
+                        tagline=req.tagline,
+                    )
+                except Exception:
+                    pass  # Don't fail deploy if email fails
 
         finally:
             _shutil.rmtree(tmpdir, ignore_errors=True)
@@ -852,3 +867,17 @@ async def _run_marketing_launch(req: MarketingLaunchRequest, launch_id: str):
         "tasks_completed": len([v for v in results.values() if not str(v).startswith("Error")]),
         "error": ""
     }
+
+
+def _send_welcome_auto(business_id: str, brand_name: str, founder_email: str,
+                       founder_name: str, landing_url: str, tagline: str):
+    """Internal helper: send welcome email after successful deploy."""
+    req = WelcomeEmailRequest(
+        business_id=business_id,
+        brand_name=brand_name,
+        founder_email=founder_email,
+        founder_name=founder_name,
+        landing_url=landing_url,
+        tagline=tagline,
+    )
+    send_welcome_email(req)
