@@ -10,7 +10,10 @@ export default function Header() {
         </Link>
         <nav className="flex items-center gap-6">
           <Link href="/demo" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
-            Live Demo
+            Demo
+          </Link>
+          <Link href="/pricing" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+            Pricing
           </Link>
           <Link href="/admin" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
             Admin
