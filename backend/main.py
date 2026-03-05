@@ -301,19 +301,46 @@ def analytics_agent(req: AgentTaskRequest):
     metrics = req.context.get("metrics", {})
     business_name = req.context.get("business_name", "das Unternehmen")
 
-    prompt = f"""Du bist ein Business Analytics Agent. Erstelle ein prägnantes CEO-Briefing für {business_name}.
+    # Try to load actual business data for more relevant briefing
+    business_context = ""
+    if req.business_id:
+        try:
+            state = get_state(req.business_id)
+            if state and state.get("status") == "done":
+                output_dir = Path(state.get("output_dir", ""))
+                brand_file = output_dir / "BRAND.json"
+                if brand_file.exists():
+                    bd = json.loads(brand_file.read_text())
+                    niche = bd.get("nische", bd.get("niche", ""))
+                    positioning = bd.get("positioning", bd.get("unique_value_proposition", ""))[:200]
+                    if positioning:
+                        business_context = f"\nBusiness-Kontext: {positioning}\nNische: {niche}"
+        except Exception:
+            pass
+
+    prompt = f"""Du bist ein Business Analytics Agent. Erstelle ein prägnantes CEO-Briefing für {business_name}.{business_context}
 
 Aktuelle Metriken: {json.dumps(metrics, ensure_ascii=False)}
 Zeitraum: {req.context.get('period', 'heute')}
 Aufgabe: {req.task}
 
 Format:
-- TOP 3 Highlights
-- TOP 3 Probleme / Risiken  
-- 3 empfohlene Maßnahmen für heute
-- Kurze Prognose
+### {business_name} — CEO Briefing
 
-Kurz und direkt. Kein Bullshit."""
+**TOP 3 Prioritäten heute:**
+1. ...
+2. ...
+3. ...
+
+**Risiken im Blick:**
+- ...
+
+**Empfohlene nächste Schritte:**
+1. ...
+2. ...
+3. ...
+
+Kurz und direkt. Kein Bullshit. Keine generischen Ratschläge."""
 
     response = client.chat.completions.create(
         model="gpt-4o",
