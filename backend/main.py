@@ -337,13 +337,11 @@ Antworte NUR als JSON-Array mit genau 2 Objekten:
         if isinstance(decisions_list, dict):
             decisions_list = decisions_list.get("decisions", decisions_list.get("items", []))
 
-        if req.business_id not in _decisions:
-            _decisions[req.business_id] = []
-
+        existing = _load_decisions(req.business_id)
         for d in decisions_list[:2]:
             import uuid as _u
             import time as _t
-            _decisions[req.business_id].append({
+            existing.append({
                 "id": str(_u.uuid4())[:8],
                 "title": d.get("title", "Entscheidung erforderlich"),
                 "description": d.get("description", ""),
@@ -353,6 +351,8 @@ Antworte NUR als JSON-Array mit genau 2 Objekten:
                 "status": "open",
                 "created_at": _t.strftime("%Y-%m-%d %H:%M"),
             })
+        _save_decisions(req.business_id, existing)
+        _decisions[req.business_id] = existing
         decisions_created = len(decisions_list[:2])
     except Exception:
         decisions_created = 0
@@ -384,7 +384,23 @@ def agents_status(business_id: str):
 import uuid as _uuid_mod
 import time as _time_mod
 
-_decisions: dict = {}  # {business_id: [{id, title, desc, options, agent, urgency, status, created_at}]}
+# Persistent Decision Queue (survives restarts)
+DECISIONS_DIR = Path("/tmp/business-os-decisions")
+DECISIONS_DIR.mkdir(exist_ok=True)
+
+def _load_decisions(business_id: str) -> list:
+    f = DECISIONS_DIR / f"{business_id}.json"
+    if f.exists():
+        try:
+            return json.loads(f.read_text())
+        except Exception:
+            return []
+    return []
+
+def _save_decisions(business_id: str, decisions: list):
+    (DECISIONS_DIR / f"{business_id}.json").write_text(json.dumps(decisions, indent=2))
+
+_decisions: dict = {}  # in-memory cache; synced to disk
 
 class DecisionSubmit(BaseModel):
     title: str
@@ -400,8 +416,7 @@ class DecisionResolve(BaseModel):
 @app.post("/api/decisions/{business_id}")
 def submit_decision(business_id: str, req: DecisionSubmit):
     """Agent submits a decision for the CEO to make."""
-    if business_id not in _decisions:
-        _decisions[business_id] = []
+    decisions = _load_decisions(business_id)
     decision = {
         "id": str(_uuid_mod.uuid4())[:8],
         "title": req.title,
@@ -412,13 +427,16 @@ def submit_decision(business_id: str, req: DecisionSubmit):
         "status": "open",
         "created_at": _time_mod.strftime("%Y-%m-%d %H:%M"),
     }
-    _decisions[business_id].append(decision)
+    decisions.append(decision)
+    _save_decisions(business_id, decisions)
+    _decisions[business_id] = decisions  # update cache
     return {"decision_id": decision["id"], "status": "queued"}
 
 @app.get("/api/decisions/{business_id}")
 def get_decisions(business_id: str):
     """Get all open decisions for a business."""
-    all_d = _decisions.get(business_id, [])
+    all_d = _load_decisions(business_id)
+    _decisions[business_id] = all_d  # sync cache
     open_d = [d for d in all_d if d["status"] == "open"]
     resolved = [d for d in all_d if d["status"] == "resolved"]
     return {
@@ -431,18 +449,21 @@ def get_decisions(business_id: str):
 @app.patch("/api/decisions/{business_id}/{decision_id}")
 def resolve_decision(business_id: str, decision_id: str, req: DecisionResolve):
     """CEO resolves a decision."""
-    for d in _decisions.get(business_id, []):
+    decisions = _load_decisions(business_id)
+    for d in decisions:
         if d["id"] == decision_id:
             d["status"] = "resolved"
             d["chosen_option"] = req.chosen_option
             d["resolved_at"] = _time_mod.strftime("%Y-%m-%d %H:%M")
+            _save_decisions(business_id, decisions)
+            _decisions[business_id] = decisions
             return {"status": "resolved", "chosen": req.chosen_option}
     raise HTTPException(status_code=404, detail="Decision not found")
 
 @app.get("/api/businesses/{business_id}/agents")
 def get_business_agents(business_id: str):
     """Status of all 6 agents for a business."""
-    open_decisions = len([d for d in _decisions.get(business_id, []) if d["status"] == "open"])
+    open_decisions = len([d for d in _load_decisions(business_id) if d["status"] == "open"])
     return {
         "business_id": business_id,
         "agents": [
