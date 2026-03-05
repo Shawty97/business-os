@@ -1159,3 +1159,30 @@ def list_viewable_files(job_id: str):
             available.append({"filename": fname, "label": label})
     
     return {"job_id": job_id, "files": available}
+
+
+# ── Sales Deck Viewer ────────────────────────────────────────────────────
+
+from fastapi.responses import HTMLResponse
+
+@app.get("/deck/{job_id}", response_class=HTMLResponse)
+def view_sales_deck(job_id: str):
+    """Serve the Sales Deck HTML directly — shareable link."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        return HTMLResponse("<h1>Business nicht gefunden</h1>", status_code=404)
+    
+    output_dir = Path(state.get("output_dir", ""))
+    deck_file = output_dir / "SALES_DECK.html"
+    
+    if not deck_file.exists():
+        return HTMLResponse("<h1>Sales Deck nicht verfügbar</h1>", status_code=404)
+    
+    html_content = deck_file.read_text()
+    # Inject navigation header
+    nav = f"""<div style="position:fixed;top:0;right:0;z-index:9999;background:rgba(0,0,0,.8);padding:8px 16px;border-radius:0 0 0 8px;font-family:sans-serif;font-size:12px;color:#aaa;">
+      <a href="/result/{job_id}" style="color:#818cf8;text-decoration:none;">← Zurück zum Dashboard</a>
+      &nbsp;|&nbsp; Sales Deck für {state.get('brand_name',job_id[:8])}
+    </div>"""
+    html_content = html_content.replace("<body>", f"<body>{nav}")
+    return HTMLResponse(html_content)

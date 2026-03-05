@@ -235,8 +235,17 @@ export default function ResultPage() {
           </div>
         )}
 
-        <div className="mt-8 text-center">
-          <a href="/build" className="text-indigo-400 hover:text-indigo-300 text-sm">
+        <div className="mt-8 flex items-center justify-center gap-6 text-sm">
+          <a
+            href={`${API}/deck/${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-400 hover:text-indigo-300"
+          >
+            📑 Sales Deck öffnen →
+          </a>
+          <span className="text-zinc-700">|</span>
+          <a href="/build" className="text-zinc-500 hover:text-white">
             + Nächstes Business bauen
           </a>
         </div>
