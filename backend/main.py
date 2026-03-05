@@ -782,11 +782,11 @@ p {{color: #888; line-height: 1.6; margin: 0 0 16px;}}
 </html>"""
 
     email_payload = json.dumps({
-        "from": "A-Impact Business OS <onboarding@a-impact.io>",
+        "from": "Apex <apex@a-impact.io>",
         "to": [req.founder_email],
         "subject": f"🚀 {req.brand_name} ist live — dein Business wartet auf dich",
         "html": html_body,
-        "reply_to": "robert@a-impact.io",
+        "reply_to": "apex@a-impact.io",
     }).encode()
 
     try:
@@ -795,7 +795,8 @@ p {{color: #888; line-height: 1.6; margin: 0 0 16px;}}
             data=email_payload,
             headers={
                 "Authorization": f"Bearer {resend_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "resend-python/2.0.0",
             },
             method="POST"
         )
