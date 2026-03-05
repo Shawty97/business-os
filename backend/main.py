@@ -17,9 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── State Storage (in-memory + JSON fallback) ──
-JOB_STATE_DIR = Path("/tmp/business-os-jobs")
-JOB_STATE_DIR.mkdir(exist_ok=True)
+# ── State Storage (persistent across reboots) ──
+JOB_STATE_DIR = Path(os.environ.get("BOS_JOBS_DIR", "/var/lib/business-os/jobs"))
+JOB_STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 def set_state(job_id: str, data: dict):
     (JOB_STATE_DIR / f"{job_id}.json").write_text(json.dumps(data))
@@ -401,8 +401,8 @@ import uuid as _uuid_mod
 import time as _time_mod
 
 # Persistent Decision Queue (survives restarts)
-DECISIONS_DIR = Path("/tmp/business-os-decisions")
-DECISIONS_DIR.mkdir(exist_ok=True)
+DECISIONS_DIR = Path(os.environ.get("BOS_DECISIONS_DIR", "/var/lib/business-os/decisions"))
+DECISIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 def _load_decisions(business_id: str) -> list:
     f = DECISIONS_DIR / f"{business_id}.json"
