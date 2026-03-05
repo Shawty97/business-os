@@ -1091,4 +1091,21 @@ def get_job_preview(job_id: str):
         except Exception:
             pass
 
+    # Parse AI_AGENTS.json for preview
+    agents_file = output_dir / "AI_AGENTS.json"
+    if agents_file.exists():
+        try:
+            agents_data = json.loads(agents_file.read_text())
+            agents_list = agents_data if isinstance(agents_data, list) else agents_data.get("agents", [])
+            preview["agents_preview"] = [
+                {
+                    "name": a.get("name", ""),
+                    "rolle": a.get("rolle", "")[:80],
+                    "prioritaet": a.get("prioritaet", ""),
+                }
+                for a in agents_list[:4]
+            ]
+        except Exception:
+            pass
+
     return preview

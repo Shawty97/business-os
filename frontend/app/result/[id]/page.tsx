@@ -13,6 +13,7 @@ type Preview = {
   }
   quick_start_bullets: string[]
   revenue_headline: string
+  agents_preview?: { name: string; rolle: string; prioritaet: string }[]
 }
 
 const FILE_META: Record<string, { icon: string; label: string; desc: string }> = {
@@ -103,6 +104,24 @@ export default function ResultPage() {
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                 <div className="text-xs font-semibold text-yellow-400 uppercase tracking-wide mb-2">💰 Revenue Modell</div>
                 <p className="text-zinc-300 text-sm leading-relaxed">{preview.revenue_headline}</p>
+              </div>
+            )}
+            {preview.agents_preview && preview.agents_preview.length > 0 && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 col-span-full">
+                <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">🤖 Deine Business-Agents</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {preview.agents_preview.map((a, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className={`text-xs px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${a.prioritaet === 'Hoch' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700 text-zinc-400'}`}>
+                        {a.prioritaet}
+                      </span>
+                      <div>
+                        <div className="text-white text-xs font-semibold">{a.name}</div>
+                        <div className="text-zinc-500 text-xs">{a.rolle}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
