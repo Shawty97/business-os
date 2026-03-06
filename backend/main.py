@@ -1404,3 +1404,83 @@ def api_generate_outreach(job_id: str):
         runner.log_action("outreach", "generate_package", f"{package['matching_leads']} leads matched")
     
     return package
+
+# ── Auto Scheduler ──
+
+SCHEDULER_FILE = Path("/var/lib/business-os/scheduler.json")
+
+@app.post("/api/v3/scheduler/enable/{job_id}")
+def enable_scheduler(job_id: str, interval_hours: int = 24):
+    """Enable automatic daily AI cycles for a business."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Business not built yet")
+    
+    sched = json.loads(SCHEDULER_FILE.read_text()) if SCHEDULER_FILE.exists() else {}
+    sched[job_id] = {
+        "enabled": True,
+        "interval_hours": interval_hours,
+        "brand_name": state.get("brand_name", ""),
+        "last_run": None,
+        "runs_total": 0,
+        "created_at": datetime.now().isoformat()
+    }
+    SCHEDULER_FILE.write_text(json.dumps(sched, indent=2))
+    return {"status": "scheduled", "job_id": job_id, "interval": f"every {interval_hours}h"}
+
+@app.post("/api/v3/scheduler/disable/{job_id}")
+def disable_scheduler(job_id: str):
+    """Disable auto-scheduling for a business."""
+    sched = json.loads(SCHEDULER_FILE.read_text()) if SCHEDULER_FILE.exists() else {}
+    if job_id in sched:
+        sched[job_id]["enabled"] = False
+        SCHEDULER_FILE.write_text(json.dumps(sched, indent=2))
+    return {"status": "disabled", "job_id": job_id}
+
+@app.get("/api/v3/scheduler")
+def list_scheduled():
+    """List all scheduled businesses."""
+    sched = json.loads(SCHEDULER_FILE.read_text()) if SCHEDULER_FILE.exists() else {}
+    return {"scheduled": sched, "count": len([v for v in sched.values() if v.get("enabled")])}
+
+# ── Business Stats ──
+
+@app.get("/api/v3/stats")
+def get_global_stats():
+    """Global BOS statistics — for Mission Control and dashboards."""
+    jobs = list(JOB_STATE_DIR.glob("*.json"))
+    done = 0
+    running = 0
+    brands = []
+    for jp in jobs:
+        try:
+            d = json.loads(jp.read_text())
+            if d.get("status") == "done": done += 1
+            elif d.get("status") == "running": running += 1
+            if d.get("brand_name"): brands.append(d["brand_name"])
+        except: pass
+    
+    runner_dir = Path("/var/lib/business-os/runners")
+    runners = list(runner_dir.glob("*.json")) if runner_dir.exists() else []
+    active_runners = 0
+    for rp in runners:
+        try:
+            rd = json.loads(rp.read_text())
+            if rd.get("running"): active_runners += 1
+        except: pass
+    
+    sched = json.loads(SCHEDULER_FILE.read_text()) if SCHEDULER_FILE.exists() else {}
+    scheduled_count = len([v for v in sched.values() if v.get("enabled")])
+    
+    return {
+        "total_businesses": len(jobs),
+        "done": done,
+        "running": running,
+        "active_runners": active_runners,
+        "scheduled": scheduled_count,
+        "brands": brands,
+        "agents": 6,
+        "documents_per_business": 12,
+        "api_version": "3.1",
+        "status": "operational"
+    }
