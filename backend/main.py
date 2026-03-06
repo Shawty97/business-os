@@ -200,6 +200,33 @@ def get_job_result(job_id: str):
         "zip_url": f"/api/jobs/{job_id}/download",
     }
 
+@app.get("/api/jobs/{job_id}/preview")
+def preview_job(job_id: str):
+    """Return full brand data + file list for result page."""
+    state = get_state(job_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Job nicht gefunden")
+    output_dir = state.get("output_dir")
+    brand = {}
+    files = {}
+    if output_dir and Path(output_dir).exists():
+        brand_path = Path(output_dir) / "BRAND.json"
+        if brand_path.exists():
+            brand = json.loads(brand_path.read_text())
+        for f in Path(output_dir).iterdir():
+            if f.is_file() and f.suffix in ['.json', '.md', '.html', '.txt']:
+                try:
+                    files[f.name] = f.read_text()[:5000]
+                except Exception:
+                    files[f.name] = "(read error)"
+    return {
+        "job_id": job_id,
+        "status": state.get("status"),
+        "brand": brand,
+        "files": files,
+        "zip_url": f"/api/jobs/{job_id}/download" if state.get("status") == "done" else None,
+    }
+
 @app.get("/api/jobs/{job_id}/download")
 def download_zip(job_id: str):
     state = get_state(job_id)
