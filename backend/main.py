@@ -1370,3 +1370,37 @@ def api_ai_sales_only(job_id: str):
         runner.log_action(result["agent"], result["action"], result["result"])
     
     return result
+
+
+# ── BOS v3: Outreach Engine ───────────────────────────────────────────
+
+from outreach_engine import find_matching_leads, generate_outreach_package
+
+@app.get("/api/v3/outreach/leads")
+def api_find_leads(vertical: str = "Insurance", country: str = "DE", limit: int = 10):
+    """Find matching leads for a vertical."""
+    leads = find_matching_leads(vertical, country, limit)
+    return {"count": len(leads), "leads": leads}
+
+@app.post("/api/v3/outreach/{job_id}")
+def api_generate_outreach(job_id: str):
+    """Generate full outreach package for a completed business."""
+    state = get_state(job_id)
+    if not state or state.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Business not built yet")
+    
+    job_data = {
+        "brand_name": state.get("brand_name", ""),
+        "tagline": state.get("tagline", ""),
+        "description": state.get("description", ""),
+        "qualifications": state.get("qualifications", {}),
+    }
+    
+    package = generate_outreach_package(job_data)
+    
+    # Log to runner if active
+    runner = get_runner(job_id)
+    if runner:
+        runner.log_action("outreach", "generate_package", f"{package['matching_leads']} leads matched")
+    
+    return package
