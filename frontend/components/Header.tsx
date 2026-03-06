@@ -18,6 +18,9 @@ export default function Header() {
           <Link href="/mdt" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
             MDT
           </Link>
+          <Link href="/outreach" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+            Outreach
+          </Link>
           <Link href="/runners" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
             Runners
           </Link>
